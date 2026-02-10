@@ -1,6 +1,26 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
-const { autoUpdater } = require('electron-updater');
-require('./ClaudeProxy');
+// Safe auto-updater initialization
+let autoUpdater;
+try {
+  // Only use auto-updater if packaged
+  if (app.isPackaged) {
+    autoUpdater = require('electron-updater').autoUpdater;
+  } else {
+    // Dummy object for dev mode to prevent crashes
+    autoUpdater = {
+      on: () => { },
+      checkForUpdates: () => { },
+      downloadUpdate: () => { },
+      quitAndInstall: () => { },
+      autoDownload: false,
+      autoInstallOnAppQuit: false
+    };
+  }
+} catch (err) {
+  console.error('Failed to initialize auto-updater:', err);
+  autoUpdater = { on: () => { }, checkForUpdates: () => { } };
+}
+
 const path = require('path');
 const fs = require('fs').promises;
 const chokidar = require('chokidar');
@@ -70,7 +90,7 @@ async function createWindow() {
     // Try different ports in order of preference
     const ports = [3000, 3001, 3002, 5173];
     let loaded = false;
-    
+
     for (const port of ports) {
       try {
         await mainWindow.loadURL(`http://localhost:${port}`);
@@ -81,11 +101,11 @@ async function createWindow() {
         console.log(`⚠️ Port ${port} not available, trying next...`);
       }
     }
-    
+
     if (!loaded) {
       console.error('❌ Could not connect to dev server on any port');
     }
-    
+
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../build/index.html'));
@@ -321,17 +341,17 @@ ipcMain.handle('dialog:saveFile', async (event, defaultPath) => {
 // Terminal Operations
 ipcMain.handle('terminal:create', (event, cwd) => {
   if (!pty) {
-    return { 
-      success: false, 
-      error: 'Terminal not available. Run: npm rebuild node-pty' 
+    return {
+      success: false,
+      error: 'Terminal not available. Run: npm rebuild node-pty'
     };
   }
-  
+
   try {
     // Use the user's default shell or fallback to zsh/bash
     const shell = process.env.SHELL || (process.platform === 'win32' ? 'powershell.exe' : '/bin/zsh');
     console.log('[Terminal] Attempting to spawn:', shell, 'in', cwd || process.env.HOME);
-    
+
     const ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: 80,
@@ -352,7 +372,7 @@ ipcMain.handle('terminal:create', (event, cwd) => {
         buffer.shift(); // Remove oldest line
       }
       terminalBuffers.set(terminalId, buffer);
-      
+
       mainWindow.webContents.send('terminal:data', terminalId, data);
     });
 
@@ -450,16 +470,16 @@ ipcMain.handle('watch:stop', (event, dirPath) => {
 ipcMain.handle('output:log', (event, { channel, message, type = 'info' }) => {
   const timestamp = new Date().toISOString();
   const logEntry = { timestamp, message, type, channel };
-  
+
   if (!outputChannels.has(channel)) {
     outputChannels.set(channel, []);
   }
-  
+
   outputChannels.get(channel).push(logEntry);
-  
+
   // Send to renderer
   mainWindow.webContents.send('output:message', logEntry);
-  
+
   return { success: true };
 });
 
@@ -483,12 +503,12 @@ ipcMain.handle('output:get', (event, channel) => {
 ipcMain.handle('process:run', async (event, { command, cwd }) => {
   const { spawn } = require('child_process');
   const processId = Date.now().toString();
-  
+
   return new Promise((resolve) => {
     try {
       const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/bash';
       const args = process.platform === 'win32' ? ['/c', command] : ['-c', command];
-      
+
       const proc = spawn(shell, args, {
         cwd: cwd || process.cwd(),
         env: process.env,
@@ -529,13 +549,13 @@ ipcMain.handle('process:run', async (event, { command, cwd }) => {
           channel: 'Tasks',
           processId,
         });
-        
-        resolve({ 
-          success: code === 0, 
-          code, 
-          stdout, 
+
+        resolve({
+          success: code === 0,
+          code,
+          stdout,
           stderr,
-          processId 
+          processId
         });
       });
 
@@ -547,11 +567,11 @@ ipcMain.handle('process:run', async (event, { command, cwd }) => {
           channel: 'Tasks',
           processId,
         });
-        
-        resolve({ 
-          success: false, 
+
+        resolve({
+          success: false,
           error: error.message,
-          processId 
+          processId
         });
       });
     } catch (error) {
@@ -567,11 +587,11 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
     const diagnostics = [];
     const lines = content.split('\n');
     const ext = path.extname(filePath);
-    
+
     // Basic syntax checking for common issues
     lines.forEach((line, index) => {
       const lineNum = index + 1;
-      
+
       // JavaScript/TypeScript checks
       if (['.js', '.jsx', '.ts', '.tsx'].includes(ext)) {
         // Check for console.log (warning)
@@ -585,7 +605,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
             source: 'eslint',
           });
         }
-        
+
         // Check for debugger statements
         if (line.includes('debugger')) {
           diagnostics.push({
@@ -597,7 +617,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
             source: 'eslint',
           });
         }
-        
+
         // Check for TODO comments
         if (line.includes('// TODO') || line.includes('// FIXME')) {
           diagnostics.push({
@@ -609,7 +629,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
             source: 'todo',
           });
         }
-        
+
         // Check for var usage
         if (line.match(/\bvar\s+/)) {
           diagnostics.push({
@@ -622,7 +642,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
           });
         }
       }
-      
+
       // Python checks
       if (ext === '.py') {
         // Check for print statements
@@ -637,7 +657,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
           });
         }
       }
-      
+
       // CSS checks
       if (['.css', '.scss', '.less'].includes(ext)) {
         // Check for !important
@@ -653,7 +673,7 @@ ipcMain.handle('diagnostics:analyze', async (event, filePath) => {
         }
       }
     });
-    
+
     return { diagnostics };
   } catch (error) {
     return { diagnostics: [], error: error.message };
@@ -678,20 +698,20 @@ ipcMain.handle('debug:evaluate', async (event, expression) => {
       __dirname: __dirname,
       __filename: __filename,
     });
-    
+
     const result = vm.runInContext(expression, context, {
       timeout: 1000,
       displayErrors: true,
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       result: JSON.stringify(result, null, 2),
       type: typeof result,
     };
   } catch (error) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error.message,
       type: 'error',
     };
@@ -712,7 +732,7 @@ ipcMain.handle('debug:log', (event, { message, level = 'log' }) => {
 // Recursively scan directory and get file tree with contents
 async function scanWorkspace(dirPath, maxDepth = 5, currentDepth = 0) {
   if (currentDepth >= maxDepth) return null;
-  
+
   try {
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     const result = {
@@ -724,13 +744,13 @@ async function scanWorkspace(dirPath, maxDepth = 5, currentDepth = 0) {
 
     // Ignore common directories
     const ignorePatterns = [
-      'node_modules', '.git', 'dist', 'build', '.vscode', 
+      'node_modules', '.git', 'dist', 'build', '.vscode',
       '.idea', 'coverage', '.next', 'out', '.cache'
     ];
 
     for (const item of items) {
       const itemName = item.name;
-      
+
       // Skip hidden files and ignored directories
       if (itemName.startsWith('.') || ignorePatterns.includes(itemName)) {
         continue;
@@ -747,8 +767,8 @@ async function scanWorkspace(dirPath, maxDepth = 5, currentDepth = 0) {
         // Only include common code files
         const ext = path.extname(itemName).toLowerCase();
         const codeExtensions = [
-          '.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css', 
-          '.scss', '.py', '.java', '.cpp', '.c', '.h', '.md', 
+          '.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css',
+          '.scss', '.py', '.java', '.cpp', '.c', '.h', '.md',
           '.txt', '.xml', '.yml', '.yaml', '.env'
         ];
 
@@ -796,7 +816,7 @@ async function scanWorkspace(dirPath, maxDepth = 5, currentDepth = 0) {
 ipcMain.handle('workspace:scan', async (event, dirPath) => {
   try {
     const workspaceTree = await scanWorkspace(dirPath);
-    
+
     // Generate a summary
     const files = [];
     const collectFiles = (node) => {
@@ -837,18 +857,18 @@ ipcMain.handle('workspace:scan', async (event, dirPath) => {
 ipcMain.handle('workspace:listFiles', async (event, dirPath) => {
   try {
     const files = [];
-    
+
     async function scanDir(dir, depth = 0) {
       if (depth > 3) return;
-      
+
       const items = await fs.readdir(dir, { withFileTypes: true });
       const ignorePatterns = ['node_modules', '.git', 'dist', 'build'];
-      
+
       for (const item of items) {
         if (item.name.startsWith('.') || ignorePatterns.includes(item.name)) continue;
-        
+
         const itemPath = path.join(dir, item.name);
-        
+
         if (item.isDirectory()) {
           await scanDir(itemPath, depth + 1);
         } else {
@@ -863,9 +883,9 @@ ipcMain.handle('workspace:listFiles', async (event, dirPath) => {
         }
       }
     }
-    
+
     await scanDir(dirPath);
-    
+
     return { success: true, files };
   } catch (error) {
     return { success: false, error: error.message };
@@ -876,13 +896,13 @@ ipcMain.handle('workspace:listFiles', async (event, dirPath) => {
 ipcMain.handle('terminal:execute', async (event, { command, cwd }) => {
   return new Promise((resolve) => {
     const { exec } = require('child_process');
-    
+
     // 25 minute timeout for all commands - covers installs, builds, migrations, etc.
     const timeout = 25 * 60 * 1000; // 25 minutes
-    
+
     console.log(`[Terminal] Executing: ${command}`);
     console.log(`[Terminal] Working directory: ${cwd}`);
-    
+
     exec(command, { cwd, timeout, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
         console.error(`[Terminal] Command failed: ${error.message}`);
@@ -932,7 +952,7 @@ ipcMain.handle('search:inFiles', async (event, { folder, query, caseSensitive, u
 
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
-          
+
           // Skip node_modules, .git, and other common directories
           if (entry.isDirectory()) {
             if (!['node_modules', '.git', 'dist', 'build', '.next', 'out', 'coverage'].includes(entry.name)) {
@@ -942,7 +962,7 @@ ipcMain.handle('search:inFiles', async (event, { folder, query, caseSensitive, u
             // Only search in text files
             const ext = path.extname(entry.name).toLowerCase();
             const textExtensions = ['.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css', '.scss', '.sass', '.md', '.txt', '.xml', '.yml', '.yaml', '.py', '.java', '.c', '.cpp', '.h', '.go', '.rs', '.php', '.rb', '.vue', '.svelte'];
-            
+
             if (textExtensions.includes(ext) || !ext) {
               try {
                 const content = await fs.readFile(fullPath, 'utf8');
@@ -993,7 +1013,7 @@ ipcMain.handle('search:inFiles', async (event, { folder, query, caseSensitive, u
 ipcMain.handle('images:search', async (event, query) => {
   try {
     const https = require('https');
-    
+
     return new Promise((resolve) => {
       // Use Unsplash API with your access key
       const options = {
@@ -1005,20 +1025,20 @@ ipcMain.handle('images:search', async (event, query) => {
           'Accept-Version': 'v1'
         }
       };
-      
+
       const req = https.request(options, (res) => {
         let data = '';
-        
+
         res.on('data', (chunk) => {
           data += chunk;
         });
-        
+
         res.on('end', () => {
           try {
             console.log('[Image Search] Response status:', res.statusCode);
-            
+
             const result = JSON.parse(data);
-            
+
             if (result.results && result.results.length > 0) {
               const images = result.results.map(photo => ({
                 id: photo.id.toString(),
@@ -1041,12 +1061,12 @@ ipcMain.handle('images:search', async (event, query) => {
           }
         });
       });
-      
+
       req.on('error', (err) => {
         console.error('[Image Search] Request error:', err);
         resolve({ success: false, error: err.message });
       });
-      
+
       req.end();
     });
   } catch (error) {
@@ -1056,56 +1076,58 @@ ipcMain.handle('images:search', async (event, query) => {
 });
 
 // Auto-updater configuration
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
+if (app.isPackaged && autoUpdater && autoUpdater.on) {
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
-autoUpdater.on('checking-for-update', () => {
-  console.log('🔍 Checking for updates...');
-});
-
-autoUpdater.on('update-available', (info) => {
-  console.log('✅ Update available:', info.version);
-  dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: 'Update Available',
-    message: `A new version (${info.version}) is available!`,
-    buttons: ['Download Now', 'Later'],
-    defaultId: 0
-  }).then((result) => {
-    if (result.response === 0) {
-      autoUpdater.downloadUpdate();
-      mainWindow.webContents.send('update-downloading');
-    }
+  autoUpdater.on('checking-for-update', () => {
+    console.log('🔍 Checking for updates...');
   });
-});
 
-autoUpdater.on('update-not-available', () => {
-  console.log('✅ App is up to date');
-});
-
-autoUpdater.on('download-progress', (progress) => {
-  console.log(`📥 Download progress: ${Math.round(progress.percent)}%`);
-  mainWindow.webContents.send('update-progress', progress);
-});
-
-autoUpdater.on('update-downloaded', () => {
-  console.log('✅ Update downloaded');
-  dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: 'Update Ready',
-    message: 'Update downloaded. Restart now to install?',
-    buttons: ['Restart Now', 'Later'],
-    defaultId: 0
-  }).then((result) => {
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
-    }
+  autoUpdater.on('update-available', (info) => {
+    console.log('✅ Update available:', info.version);
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (${info.version}) is available!`,
+      buttons: ['Download Now', 'Later'],
+      defaultId: 0
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+        mainWindow.webContents.send('update-downloading');
+      }
+    });
   });
-});
 
-autoUpdater.on('error', (error) => {
-  console.error('❌ Auto-updater error:', error);
-});
+  autoUpdater.on('update-not-available', () => {
+    console.log('✅ App is up to date');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(`📥 Download progress: ${Math.round(progress.percent)}%`);
+    mainWindow.webContents.send('update-progress', progress);
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    console.log('✅ Update downloaded');
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: 'Update downloaded. Restart now to install?',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.error('❌ Auto-updater error:', error);
+  });
+}
 
 // ==================== Authentication IPC Handlers ====================
 
@@ -1177,8 +1199,9 @@ ipcMain.handle('auth:clearUser', async () => {
 
 // Check for updates on app start (only in production)
 app.whenReady().then(() => {
+  require('./ClaudeProxy');
   createWindow();
-  
+
   if (!app.isPackaged) {
     console.log('📦 Development mode - skipping auto-update check');
   } else {
@@ -1186,7 +1209,7 @@ app.whenReady().then(() => {
     setTimeout(() => {
       autoUpdater.checkForUpdates();
     }, 3000);
-    
+
     // Check for updates every 4 hours
     setInterval(() => {
       autoUpdater.checkForUpdates();
@@ -1199,7 +1222,7 @@ app.on('window-all-closed', () => {
   terminals.forEach((terminal) => terminal.kill());
   fileWatchers.forEach((watcher) => watcher.close());
   outputChannels.clear();
-  
+
   if (process.platform !== 'darwin') {
     app.quit();
   }

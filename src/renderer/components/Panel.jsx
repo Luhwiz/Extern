@@ -189,6 +189,9 @@ function Panel({
                 className={`terminal-tab ${activeTerminal === terminal.id ? 'active' : ''}`}
                 onClick={() => setActiveTerminal(terminal.id)}
               >
+                {terminal.status && (
+                  <span className={`terminal-status-dot ${terminal.status}`} />
+                )}
                 <span className="terminal-tab-name">{terminal.name}</span>
                 <span
                   className="terminal-close-button"
@@ -216,6 +219,7 @@ function Panel({
                 ref={(el) => (terminalRefs.current[terminal.id] = el)}
                 className={`terminal-instance ${activeTerminal === terminal.id ? 'active' : 'hidden'}`}
                 data-terminal-id={backendTerminalIds.current[terminal.id] || ''}
+                data-id={terminal.id}
               />
             ))}
           </div>

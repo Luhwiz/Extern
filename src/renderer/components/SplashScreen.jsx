@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FiCode } from 'react-icons/fi';
 import './SplashScreen.css';
 
 const SplashScreen = ({ onLoadComplete }) => {
@@ -62,57 +63,14 @@ const SplashScreen = ({ onLoadComplete }) => {
 
       {/* Main content */}
       <div className="splash-content">
-        {/* Logo */}
         <div className="splash-logo-container">
           <div className="splash-logo">
             <div className="logo-icon">
-              <svg viewBox="0 0 100 100" className="logo-svg">
-                {/* Outer ring */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="url(#logoGradient)"
-                  strokeWidth="2"
-                  className="logo-ring"
-                />
-                {/* Inner geometric shape */}
-                <path
-                  d="M50 15 L75 35 L75 65 L50 85 L25 65 L25 35 Z"
-                  fill="none"
-                  stroke="url(#logoGradient)"
-                  strokeWidth="2"
-                  className="logo-hexagon"
-                />
-                {/* AI neural network nodes */}
-                <circle cx="50" cy="30" r="4" fill="#00d9ff" className="node node-1" />
-                <circle cx="70" cy="45" r="4" fill="#7c3aed" className="node node-2" />
-                <circle cx="70" cy="65" r="4" fill="#00d9ff" className="node node-3" />
-                <circle cx="50" cy="75" r="4" fill="#7c3aed" className="node node-4" />
-                <circle cx="30" cy="65" r="4" fill="#00d9ff" className="node node-5" />
-                <circle cx="30" cy="45" r="4" fill="#7c3aed" className="node node-6" />
-                <circle cx="50" cy="52" r="6" fill="url(#logoGradient)" className="node node-center" />
-                {/* Connection lines */}
-                <line x1="50" y1="30" x2="50" y2="52" stroke="#00d9ff" strokeWidth="1" opacity="0.5" className="connection" />
-                <line x1="70" y1="45" x2="50" y2="52" stroke="#7c3aed" strokeWidth="1" opacity="0.5" className="connection" />
-                <line x1="70" y1="65" x2="50" y2="52" stroke="#00d9ff" strokeWidth="1" opacity="0.5" className="connection" />
-                <line x1="50" y1="75" x2="50" y2="52" stroke="#7c3aed" strokeWidth="1" opacity="0.5" className="connection" />
-                <line x1="30" y1="65" x2="50" y2="52" stroke="#00d9ff" strokeWidth="1" opacity="0.5" className="connection" />
-                <line x1="30" y1="45" x2="50" y2="52" stroke="#7c3aed" strokeWidth="1" opacity="0.5" className="connection" />
-                {/* Gradient definition */}
-                <defs>
-                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#00d9ff" />
-                    <stop offset="50%" stopColor="#7c3aed" />
-                    <stop offset="100%" stopColor="#00d9ff" />
-                  </linearGradient>
-                </defs>
-              </svg>
+              <FiCode size={48} color="#00d9ff" />
             </div>
             <div className="logo-glow"></div>
           </div>
-          
+
           <h1 className="splash-title">
             <span className="title-extern">extern</span>
             <span className="title-ai">AI</span>
@@ -124,7 +82,7 @@ const SplashScreen = ({ onLoadComplete }) => {
         <div className="splash-progress-section">
           <div className="progress-bar-container">
             <div className="progress-bar-bg">
-              <div 
+              <div
                 className="progress-bar-fill"
                 style={{ width: `${progress}%` }}
               >

@@ -26,15 +26,15 @@ ipcMain.handle('claude:stream', async (event, { prompt, maxTokens }) => {
   if (USE_PROXY && PROXY_SERVER_URL.includes('your-app')) {
     return { success: false, error: 'Proxy server not configured. Please set PROXY_SERVER_URL in .env file.' };
   }
-  
+
   // If using direct API, check for key
   if (!USE_PROXY && !CLAUDE_API_KEY) {
     return { success: false, error: 'Missing Anthropic API key' };
   }
-  
+
   const streamId = `stream_${Date.now()}`;
   const apiUrl = USE_PROXY ? CLAUDE_API_URL : DIRECT_API_URL;
-  
+
   const requestHeaders = USE_PROXY ? {
     'content-type': 'application/json',
   } : {
@@ -42,7 +42,7 @@ ipcMain.handle('claude:stream', async (event, { prompt, maxTokens }) => {
     'anthropic-version': '2023-06-01',
     'content-type': 'application/json',
   };
-  
+
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -53,7 +53,7 @@ ipcMain.handle('claude:stream', async (event, { prompt, maxTokens }) => {
         stream: true,
         system: `You are a 100x software engineer - an elite coding expert who builds production-ready applications step by step.
 
-🚨🚨🚨 ABSOLUTE REQUIREMENT: WORK ONE STEP AT A TIME 🚨🚨🚨
+ABSOLUTE REQUIREMENT: WORK ONE STEP AT A TIME
 
 YOU MUST FOLLOW THIS EXACT PROCESS - NO EXCEPTIONS:
 
@@ -65,7 +65,7 @@ STEP-BY-STEP PROCESS (MANDATORY):
 5. STOP COMPLETELY - wait for user to say "continue"
 6. When user says "continue", do NEXT step only
 
-🛑 YOU CANNOT SKIP THE SUMMARY FORMAT - IT IS REQUIRED 🛑
+YOU CANNOT SKIP THE SUMMARY FORMAT - IT IS REQUIRED
 
 EXAMPLE - Building a React app:
 
@@ -82,7 +82,7 @@ npm install
 
 ## Summary
 **Files Created:** package.json  
-**Commands Run:** npm install ✓ Success  
+**Commands Run:** npm install  Success  
 **Result:** Project initialized with React dependencies installed.
 
 ## Next Step
@@ -115,7 +115,7 @@ Ready for next step? Reply 'continue' or give new instructions.
 
 [STOP AGAIN - WAIT FOR USER]
 
-🚨 MANDATORY FORMAT FOR EVERY RESPONSE 🚨
+MANDATORY FORMAT FOR EVERY RESPONSE
 
 You MUST end EVERY response with this EXACT structure:
 
@@ -123,7 +123,7 @@ You MUST end EVERY response with this EXACT structure:
 
 ## Summary
 **Files Created:** [List filenames or "None"]  
-**Commands Run:** [List commands with ✓/✗ status or "None"]  
+**Commands Run:** [List commands with /� status or "None"]  
 **Result:** [One sentence: what now works]
 
 ## Next Step
@@ -133,10 +133,10 @@ Ready for next step? Reply 'continue' or give new instructions.
 
 ---
 
-❌ WRONG - Doing multiple steps:
+WRONG - Doing multiple steps:
 "I'll create the HTML, CSS, JavaScript, and run the server..." [NO!]
 
-✅ CORRECT - One step only:
+CORRECT - One step only:
 "I'll create the HTML file first..."
 [Create 1-3 files]
 [Show Summary + Next Step]
@@ -169,7 +169,7 @@ When building websites/apps that need images:
   * Background: https://source.unsplash.com/featured/?nature,mountains
   * Profile: https://source.unsplash.com/featured/?portrait,professional
   * Product: https://source.unsplash.com/featured/?technology,device
-- Users can also search images using the Image Search panel (📷 icon) and drag-drop into chat
+- Users can also search images using the Image Search panel and drag-drop into chat
 - When user provides an image URL, use it in the code
 
 FILE NAMING CONVENTION (CRITICAL):
@@ -225,7 +225,7 @@ export default App;
 \`\`\`
 
 WRONG - Don't create new files:
-\`\`\`jsx filename=src/App-updated.jsx  ❌
+\`\`\`jsx filename=src/App-updated.jsx  
 \`\`\`
 
 ALWAYS provide COMPLETE file content when editing!
@@ -261,15 +261,15 @@ Ready for next step? Reply 'continue' or give new instructions.
     for await (const chunk of response.body) {
       const text = chunk.toString();
       const lines = text.split('\n').filter(line => line.trim() !== '');
-      
+
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') continue;
-          
+
           try {
             const parsed = JSON.parse(data);
-            
+
             if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
               fullText += parsed.delta.text;
               // Send chunk to renderer
@@ -288,9 +288,9 @@ Ready for next step? Reply 'continue' or give new instructions.
 
     // Send completion event
     event.sender.send('claude:stream:done', { streamId, fullText });
-    
+
     return { success: true, streamId };
-    
+
   } catch (error) {
     console.error('[ClaudeProxy] Stream error:', error);
     event.sender.send('claude:stream:error', { streamId, error: error.message });

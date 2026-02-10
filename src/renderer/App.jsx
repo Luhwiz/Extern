@@ -25,7 +25,8 @@ function App() {
   const [workspaceFolder, setWorkspaceFolder] = useState(null);
   const [terminals, setTerminals] = useState([{
     id: 'initial-terminal',
-    name: 'Terminal 1'
+    name: 'Terminal 1',
+    status: null // 'success' or 'error'
   }]); // Always start with one terminal open
   const [aiVisible, setAiVisible] = useState(true);
   const [explorerRefreshTrigger, setExplorerRefreshTrigger] = useState(0);
@@ -99,6 +100,7 @@ function App() {
       const newTerminal = {
         id: Date.now().toString(),
         name: 'Terminal 1',
+        status: null
       };
       setTerminals([newTerminal]);
     }
@@ -135,6 +137,38 @@ function App() {
       // Cleanup listeners if needed
     };
   }, [panelVisible, sidebarVisible]);
+
+  const lastProcessedLogIndexRef = useRef(-1);
+
+  // Monitor output logs for dev server URLs
+  useEffect(() => {
+    if (outputLogs.length > lastProcessedLogIndexRef.current + 1) {
+      // Process all new logs since last check
+      for (let i = lastProcessedLogIndexRef.current + 1; i < outputLogs.length; i++) {
+        const lastLog = outputLogs[i];
+        const logText = typeof lastLog === 'string' ? lastLog : (lastLog.message || '');
+
+        const urlPatterns = [
+          /(?:Local|➜\s+Local|Network|➜\s+Network):\s+(https?:\/\/[^\s]+)/i,
+          /(?:running on|listening on|server running at|Application started at):\s+(https?:\/\/[^\s]+)/i,
+          /https?:\/\/localhost:\d+/i,
+          /http:\/\/127\.0\.0\.1:\d+/i,
+          /https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:\d+/i
+        ];
+
+        for (const pattern of urlPatterns) {
+          const match = logText.match(pattern);
+          if (match) {
+            const detectedUrl = (match[1] || match[0]).replace(/\x1b\[[0-9;]*m/g, '').trim();
+            console.log('🌐 Auto-detected dev server from logs:', detectedUrl);
+            handleDevServerDetected(detectedUrl);
+            break;
+          }
+        }
+      }
+      lastProcessedLogIndexRef.current = outputLogs.length - 1;
+    }
+  }, [outputLogs]);
 
   const handleNewFile = () => {
     const newFile = {
@@ -285,9 +319,24 @@ function App() {
   };
 
   // Handler for dev server detection - called by AI when dev server starts
+  const handleUpdateTerminalStatus = (terminalId, status) => {
+    setTerminals(prev => prev.map(t =>
+      t.id === terminalId ? { ...t, status } : t
+    ));
+  };
+
   const handleDevServerDetected = (url) => {
     console.log('🌐 Dev server detected:', url);
     setDevServerUrl(url);
+
+    // Auto-open in external browser
+    setTimeout(async () => {
+      try {
+        await window.electronAPI.shell.openExternal(url);
+      } catch (err) {
+        console.error('Failed to open browser:', err);
+      }
+    }, 1500);
   };
 
   // Handler for file updates - auto-opens browser if dev server is running
@@ -342,6 +391,7 @@ function App() {
     const newTerminal = {
       id: Date.now().toString(),
       name: `Terminal ${terminals.length + 1}`,
+      status: null
     };
     setTerminals([...terminals, newTerminal]);
     setPanelVisible(true);
@@ -357,6 +407,7 @@ function App() {
       const newTerminal = {
         id: Date.now().toString(),
         name: 'Terminal 1',
+        status: null
       };
       setTerminals([newTerminal]);
       setPanelVisible(true);
@@ -394,6 +445,7 @@ function App() {
         const initialTerminal = {
           id: Date.now().toString(),
           name: 'Terminal 1',
+          status: null
         };
         setTerminals([initialTerminal]);
         setPanelVisible(true);
@@ -467,6 +519,7 @@ function App() {
             onPublishClick={handlePublishRequest}
             onCursorChange={setCursorPosition}
             pendingPlan={pendingPlan}
+            devServerUrl={devServerUrl}
           />
           {panelVisible && (
             <Panel
@@ -487,16 +540,19 @@ function App() {
         <AIAssistant
           ref={aiAssistantRef}
           onClose={() => setAiVisible(false)}
+          onUpgradeClick={() => setShowPricing(true)}
           visible={aiVisible}
           workspaceFolder={workspaceFolder}
           onOpenFolder={handleOpenFolder}
           onFileCreated={handleFileCreatedByAI}
           onDevServerDetected={handleDevServerDetected}
+          onUpdateTerminalStatus={handleUpdateTerminalStatus}
           onFileUpdate={handleFileUpdate}
           onAddTask={handleAddTask}
           onUpdateTask={handleUpdateTask}
           explorerRefreshTrigger={explorerRefreshTrigger}
           onFirstResponse={() => setHasAiResponded(true)}
+          devServerUrl={devServerUrl}
         />
       </div>
       <StatusBar

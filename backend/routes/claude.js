@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
+const Anthropic = require('@anthropic-ai/sdk');
 const admin = require('firebase-admin');
 const { authenticateToken } = require('../middleware/auth');
 const database = require('../models/database');
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 const db = admin.firestore();
 
@@ -77,15 +81,14 @@ router.post('/summarize', authenticateToken, async (req, res) => {
     console.log(`[Summarize] Generating summary for ${messages.length} messages`);
 
     // Call Claude to summarize
-    const response = await axios.post(
-      'https://api.anthropic.com/v1/messages',
-      {
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'user',
-            content: `Summarize this conversation concisely. Focus on:
+    const msg = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 1000,
+      system: 'You are a technical summarizer. Generate concise, fact-based summaries.',
+      messages: [
+        {
+          role: 'user',
+          content: `Summarize this conversation concisely. Focus on:
 - Key decisions made
 - Technical choices and rationale
 - Open tasks or pending work
@@ -97,26 +100,17 @@ Conversation:
 ${messages.map(m => `${m.role}: ${m.content.substring(0, 500)}`).join('\n\n')}
 
 Summary:`
-          }
-        ],
-        system: 'You are a technical summarizer. Generate concise, fact-based summaries.'
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          'x-api-key': process.env.ANTHROPIC_API_KEY
         }
-      }
-    );
+      ],
+    });
 
-    const summary = response.data.content[0].text;
+    const summary = msg.content[0].text;
     console.log(`[Summarize] Generated summary: ${summary.substring(0, 100)}...`);
 
     res.json({ summary });
   } catch (error) {
     console.error('[Summarize] Error:', error.response?.data || error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Summarization failed',
       details: error.response?.data?.error?.message || error.message
     });
@@ -234,11 +228,12 @@ Unless user specifies otherwise:
 • Backend: Node.js + Express
 • Simple pages: HTML + CSS + vanilla JS
 
-WORKSPACE RULES:
-• Work in current folder directly
-• NEVER run: npx create - vite, create - react - app, mkdir project - name
-• Use relative paths: src /, public /, components /
-• Config files in root: package.json, vite.config.js
+WORK IN CURRENT FOLDER DIRECTLY:
+• NEVER run: cd, npx create-vite, create-react-app, mkdir
+• NEVER use absolute paths (e.g., /Users/...)
+• Use relative paths only (e.g., src/, public/)
+• First response MUST include ONLY 'npm install' and the start command in the bash block.
+• Assume you are already in the correct root directory.
 
 ═══════════════════════════════════════════
     PACKAGE.JSON(when creating)
@@ -473,79 +468,34 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
       defaultSystemPrompt += `\n\n## CONVERSATION HISTORY SUMMARY\n\n${conversationSummary}\n`;
     }
 
-    // Use provided system prompt or default
-    const finalSystemPrompt = system || defaultSystemPrompt;
+    // MERGE provided system prompt WITH default for full capabilities
+    let finalSystemPrompt = defaultSystemPrompt;
+    if (system) {
+      finalSystemPrompt = `${system}\n\n${defaultSystemPrompt}`;
+    }
 
-    // Set headers for SSE streaming
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // Make request to Anthropic API
-    const response = await axios.post(
-      'https://api.anthropic.com/v1/messages',
-      {
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: Math.min(max_tokens, 20000),
-        messages,
-        stream: true,
-        system: finalSystemPrompt
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        responseType: 'stream'
-      }
-    );
+    // Start Anthropic stream
+    const stream = anthropic.messages.stream({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: Math.min(max_tokens, 20000),
+      system: finalSystemPrompt,
+      messages: messages,
+    });
 
     let totalTokens = 0;
-    let buffer = '';
 
-    // Stream the response
-    response.data.on('data', (chunk) => {
-      // Add chunk to buffer
-      buffer += chunk.toString();
+    // Handle stream events
+    stream.on('text', (text) => {
+      res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { text } })}\n\n`);
+    });
 
-      // Process complete lines only
-      const lines = buffer.split('\n');
-
-      // Keep the last incomplete line in buffer
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) continue;
-
-        if (trimmedLine.startsWith('data: ')) {
-          const data = trimmedLine.slice(6);
-
-          if (data === '[DONE]') {
-            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-            continue;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-
-            // Track tokens
-            if (parsed.usage) {
-              totalTokens = parsed.usage.output_tokens || 0;
-            }
-
-            // Forward to client immediately
-            res.write(`data: ${data}\n\n`);
-          } catch (e) {
-            // Log parse errors for debugging
-            console.error('JSON parse error:', e.message, 'Data:', data.substring(0, 100));
-          }
-        }
+    stream.on('message', (message) => {
+      if (message.usage) {
+        totalTokens = message.usage.output_tokens || 0;
       }
     });
 
-    response.data.on('end', async () => {
+    stream.on('end', async () => {
       // Update user usage in Firestore
       const userRef = db.collection('users').doc(userId);
       await userRef.update({
@@ -559,9 +509,9 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
       res.end();
     });
 
-    response.data.on('error', (error) => {
+    stream.on('error', (error) => {
       console.error('SERVER LOG: Stream error:', error);
-      res.write(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: error.message || 'Stream error' })}\n\n`);
       res.end();
     });
 
@@ -569,7 +519,7 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
     console.error('SERVER LOG: Claude API Error Details:');
     console.error('- Status:', error.response?.status);
     console.error('- Status Text:', error.response?.statusText);
-    
+
     // Try to read error data if it's a stream
     if (error.response?.data) {
       try {
@@ -588,7 +538,7 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
         console.error('- Could not parse error data');
       }
     }
-    
+
     console.error('- Message:', error.message);
 
     if (error.response?.status === 429) {

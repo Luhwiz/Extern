@@ -1,7 +1,9 @@
-name: Deploy Backend to Azure
+name: Deploy Backend to Azure (No Docker)
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
@@ -14,23 +16,31 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Log in to Azure
-        uses: azure/login@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Log in to Azure Container Registry
-        run: |
-          az acr login --name externairegistry
-
-      - name: Build and Push Docker Image
+      - name: Install Dependencies & Build
         run: |
           cd backend
-          docker build -t externairegistry.azurecr.io/externai-backend:${{ github.sha }} .
-          docker push externairegistry.azurecr.io/externai-backend:${{ github.sha }}
+          npm install --production
+          # If you had a build step, it would go here. index.js/server.js doesn't usually need it.
+
+      - name: Zip Artifact for Deployment
+        run: |
+          cd backend
+          zip -r ../backend.zip . -x "node_modules/*" # Exclude node_modules to speed up upload, Azure installs them
+          # Actually for App Service Linux, it's often safer to include them OR let Azure install using remote build.
+          # We'll use remote build (removing node_modules from zip if huge, but typically cleaner to Just Zip everything if using remote build)
+          # Let's try standard zip deploy which triggers build on Azure.
+          zip -r ../deploy.zip .
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'externai-backend'
-          images: 'externairegistry.azurecr.io/externai-backend:${{ github.sha }}'
+          app-name: 'externai-backend-production' # Make sure to set this to your actual app name in the setup script!
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: './deploy.zip'

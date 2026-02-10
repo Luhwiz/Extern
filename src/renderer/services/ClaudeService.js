@@ -3,7 +3,8 @@
 
 import FirebaseService from './FirebaseService';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const isDev = import.meta.env.DEV;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (isDev ? 'http://localhost:5000' : 'https://externai-backend-production.azurewebsites.net');
 
 async function getAuthToken() {
   try {
@@ -21,20 +22,20 @@ async function getClaudeCompletion(prompt, maxTokens = 20000, timeout = 60000) {
 
   try {
     const token = await getAuthToken();
-    
+
     let response;
     try {
       // Create abort controller for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
+
       // Clean messages - remove id, isStreaming, and other UI-specific properties
       const cleanMessages = (Array.isArray(prompt) ? prompt : [{ role: 'user', content: prompt }])
         .map(msg => ({
           role: msg.role,
           content: msg.content
         }));
-      
+
       response = await fetch(`${BACKEND_URL}/api/claude/stream`, {
         method: 'POST',
         headers: {
@@ -47,12 +48,12 @@ async function getClaudeCompletion(prompt, maxTokens = 20000, timeout = 60000) {
         }),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
     } catch (fetchError) {
       console.error('[ClaudeService] Fetch error:', fetchError);
       if (fetchError.name === 'AbortError') {
-        throw new Error(`Request timed out after ${timeout/1000} seconds. The backend might be slow or Claude API is not responding.`);
+        throw new Error(`Request timed out after ${timeout / 1000} seconds. The backend might be slow or Claude API is not responding.`);
       }
       if (fetchError.message === 'Failed to fetch' || fetchError.message.includes('NetworkError')) {
         throw new Error('Cannot connect to backend server. Please ensure the backend is running on port 5000.');
@@ -136,13 +137,13 @@ async function getClaudeStream(prompt, onChunk, maxTokens = 20000, signal = null
     if (systemPrompt) {
       body.system = systemPrompt;
     }
-    
+
     // Layer 2: Inject project state
     if (projectState) {
       body.projectState = projectState;
       console.log('[ClaudeService] Injecting project state');
     }
-    
+
     // Layer 3: Inject conversation summary
     if (conversationSummary) {
       body.conversationSummary = conversationSummary;
@@ -298,7 +299,7 @@ export default {
   // Summarize conversation messages (Layer 3: Conversation pruning)
   async summarizeConversation(messages) {
     console.log('[ClaudeService] Summarizing', messages.length, 'messages...');
-    
+
     try {
       const token = await getAuthToken();
       const response = await fetch(`${BACKEND_URL}/api/claude/summarize`, {

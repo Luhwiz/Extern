@@ -3,12 +3,18 @@ import Editor from '@monaco-editor/react';
 import { FiX, FiMonitor, FiCode, FiUploadCloud } from 'react-icons/fi';
 import './EditorArea.css';
 
-function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onContentChange, onOpenFolder, theme, onPreviewClick, onPublishClick, onCursorChange, pendingPlan }) {
-  const [showPreview, setShowPreview] = useState(false);
+function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onContentChange, onOpenFolder, theme, onPreviewClick, onPublishClick, onCursorChange, pendingPlan, devServerUrl }) {
   const [previewUrl, setPreviewUrl] = useState('http://localhost:3000');
   const [fontSize, setFontSize] = useState(12);
   const [tabSize, setTabSize] = useState(2);
   const currentFile = openFiles.find((f) => f.id === activeFile);
+
+  // Sync previewUrl with devServerUrl when it changes
+  useEffect(() => {
+    if (devServerUrl) {
+      setPreviewUrl(devServerUrl);
+    }
+  }, [devServerUrl]);
 
   // Debug logging for pendingPlan
   useEffect(() => {
@@ -73,11 +79,13 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
   };
 
   const handlePreviewClick = () => {
-    if (!showPreview && onPreviewClick) {
-      // Trigger AI to run the dev server
+    if (devServerUrl) {
+      // If server is running, open in external browser
+      window.electronAPI.shell.openExternal(devServerUrl);
+    } else if (onPreviewClick) {
+      // If server not running, trigger AI to start it
       onPreviewClick();
     }
-    setShowPreview(!showPreview);
   };
 
   // Determine Monaco theme based on app theme
@@ -109,12 +117,12 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
         ))}
         <div className="editor-toolbar">
           <button
-            className={`toolbar-button ${showPreview ? 'active' : ''}`}
+            className="toolbar-button"
             onClick={handlePreviewClick}
-            title="Toggle Live Preview"
+            title="Open Live Preview"
           >
-            {showPreview ? <FiCode size={16} /> : <FiMonitor size={16} />}
-            {showPreview ? 'Code' : 'Preview'}
+            <FiMonitor size={16} />
+            Preview
           </button>
           <button
             className="toolbar-button"
@@ -124,70 +132,46 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
             <FiUploadCloud size={16} />
             Publish
           </button>
-          {showPreview && (
-            <input
-              type="text"
-              className="preview-url-input"
-              value={previewUrl}
-              onChange={(e) => setPreviewUrl(e.target.value)}
-              placeholder="Preview URL"
-            />
-          )}
         </div>
       </div>
-      <div className="editor-content" style={{ display: 'flex' }}>
-        {!showPreview && currentFile ? (
-          <Editor
-            height="100%"
-            language={currentFile.language}
-            value={currentFile.content}
-            onChange={handleEditorChange}
-            theme={monacoTheme}
-            onMount={handleEditorDidMount}
-            loading={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--vscode-fg)' }}>Loading editor...</div>}
-            options={{
-              fontSize: fontSize,
-              fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, 'Courier New', monospace",
-              minimap: { enabled: true },
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-              tabSize: tabSize,
-              insertSpaces: true,
-              wordWrap: 'on',
-              lineNumbers: 'on',
-              renderWhitespace: 'selection',
-              scrollbar: {
-                vertical: 'auto',
-                horizontal: 'auto',
-              },
-            }}
-          />
-        ) : showPreview ? (
-          <div className="live-preview-container">
-            <iframe
-              src={previewUrl}
-              className="live-preview-iframe"
-              title="Live Preview"
-              sandbox="allow-same-origin allow-scripts allow-forms"
-            />
+      <div className="editor-content">
+        {openFiles.length > 0 ? (
+          <div className="editor-pane" style={{ display: activeFile ? 'block' : 'none' }}>
+            {currentFile && (
+              <Editor
+                height="100%"
+                language={currentFile.language}
+                value={currentFile.content}
+                onChange={handleEditorChange}
+                theme={monacoTheme}
+                onMount={handleEditorDidMount}
+                loading={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--vscode-fg)' }}>Loading editor...</div>}
+                options={{
+                  fontSize: fontSize,
+                  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, 'Courier New', monospace",
+                  minimap: { enabled: true },
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: tabSize,
+                  insertSpaces: true,
+                  wordWrap: 'on',
+                  lineNumbers: 'on',
+                  renderWhitespace: 'selection',
+                  scrollbar: {
+                    vertical: 'auto',
+                    horizontal: 'auto',
+                  },
+                }}
+              />
+            )}
           </div>
         ) : (
           <div className="editor-welcome">
             <h1>ExternAI</h1>
-            <p className="welcome-subtitle">AI-Powered Development Environment</p>
-            <div className="welcome-actions">
-              <div className="welcome-section">
-                <h3>Create Project</h3>
-                <button className="welcome-button" onClick={() => handleCreateProject('website')}>
-                  Website Project
-                </button>
-                <button className="welcome-button" onClick={() => handleCreateProject('mobile')}>
-                  Mobile App Project
-                </button>
-                <button className="welcome-button" onClick={() => handleCreateProject('game')}>
-                  Game Project
-                </button>
-              </div>
+            <p className="welcome-subtitle">Your AI-Powered Software Development Environment</p>
+            <div className="welcome-description" style={{ maxWidth: '600px', margin: '0 auto', opacity: 0.8 }}>
+              <p>Ready to bring your ideas to life? Just tell the AI what you want to create—from simple websites to complex apps. We'll handle the coding, so you can focus on your vision.</p>
+              <p style={{ marginTop: '20px', fontSize: '0.9em' }}>To get started, describe your project in the chat on the right!</p>
             </div>
           </div>
         )}

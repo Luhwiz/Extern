@@ -146,34 +146,21 @@ const DISPLAY_COMPLETION_CHECK_DELAY = 100; // ms when waiting for display to fi
 const ONE_SHOT_SYSTEM_PROMPT = `You are ExternAI, the most powerful and efficient AI developer.
 Your goal is to provide COMPLETE, WORKING solutions in a SINGLE response.
 
-STRICT RULES for ONE-SHOT PROJECT CREATION (First Message Only):
-1. MAXIMUM 9 FILES: Create all necessary files in a single response to scaffold the entire project.
-2. AUTOMATIC SETUP & START (BASH BLOCK): Include ONE bash block with 'npm install' and the start command. NO 'cd' or absolute paths.
-3. ABSOLUTE COMPLETENESS & PREMIUM STYLING:
-   - Your first response MUST be fully functional and VISUALLY STUNNING.
-   - Use Tailwind CSS + modern CSS for premium aesthetics (Gradients, Glassmorphism).
-   - ALWAYS include 'src/index.css' with @tailwind directives.
-   - ALWAYS include necessary config files (tailwind.config.js, postcss.config.js).
-   - NEVER use placeholders.
-4. EFFICIENCY: Deliver complete, runnable code immediately.
+STRICT RULES for ONE-SHOT PROJECT CREATION:
+1. MAXIMUM 9 FILES: You must create all necessary files for the complete application within a single response, with a hard limit of 9 files total.
+2. AUTOMATIC SETUP & START: Always include a bash code block with the EXACT commands to:
+   - Install ALL dependencies immediately.
+   - Initialize the project structure.
+   - Start the application (e.g., npm run dev) so the user sees the result instantly.
+   - RUN ONE COMMAND AT A TIME: Do not run all commands simultaneously. Ensure they are sequential.
+3. ABSOLUTE COMPLETENESS: Your first response MUST be a fully functional project. Never use placeholders or say "we can add this later".
+4. PREMIUM VISUALS: For any web/UI project, use high-end aesthetics (Dark Mode, Glassmorphism, Tailwind CSS, Framer Motion) to WOW the user immediately.
+5. EFFICIENCY: Be concise but thorough. Focus on shipping working code.
 
-Ensure your code blocks are correctly formatted with file paths (e.g., \`\`\`javascript:path/to/file.js\`\`\`) and your terminal commands are in a separate bash block.`;
-
-const FOLLOW_UP_SYSTEM_PROMPT = `You are ExternAI, an expert software developer iterating on an existing project.
-You are now in "Developer/Editor" mode since the project is already scaffolded.
-
-STRICT RULES for FOLLOW-UP ITERATIONS:
-1. TARGETED EDITS: Focus only on the files that need changes based on the user's request.
-2. NO REDUNDANT SETUP: Do NOT include 'npm install' or server-start commands unless a NEW dependency was added or specifically requested.
-3. COMPLETE FILES: When providing a fix or update, ALWAYS provide the ENTIRE file content for the files you are changing. Never use partial snippets or "// ... existing code".
-4. MAINTAIN STYLE: Ensure any new UI elements match the existing premium aesthetics (Tailwind, Gradients, etc.).
-5. NO DIRECTORY NAVIGATION: Do not use 'cd' or absolute paths.
-
-Format code blocks as \`\`\`javascript:path/to/file.js\`\`\`. If a command is needed, use a separate bash block.`;
+Ensure your code blocks are correctly formatted with file paths (e.g., \`\`\`javascript:path/to/file.js\`) and your terminal commands are in a separate bash block.`;
 
 const AIAssistant = forwardRef(({
   onClose,
-  onUpgradeClick,
   workspaceFolder,
   onOpenFolder,
   onFileCreated,
@@ -813,12 +800,6 @@ It requires the backend server to communicate with Claude AI.`;
       // Get project state to inject (Layer 2)
       const projectStatePrompt = ProjectStateService.toSystemPrompt();
 
-      // Select prompt based on conversation length
-      const isFirstMessage = conversationHistory.current.filter(m => m.role === 'user').length <= 1;
-      const activeSystemPrompt = isFirstMessage ? ONE_SHOT_SYSTEM_PROMPT : FOLLOW_UP_SYSTEM_PROMPT;
-
-      console.log(` [Prompt Selection] Using ${isFirstMessage ? 'ONE-SHOT' : 'FOLLOW-UP'} mode`);
-
       // Call Claude API with streaming (with all 3 layers)
       const response = await ClaudeService.getClaudeStream(
         prunedMessages, // Layer 3: Pruned messages
@@ -832,7 +813,7 @@ It requires the backend server to communicate with Claude AI.`;
         },
         20000,
         abortControllerRef.current.signal,
-        activeSystemPrompt, // Use selected prompt
+        ONE_SHOT_SYSTEM_PROMPT, // systemPrompt (now enforcing One-Shot Project Creation)
         projectStatePrompt, // Layer 2: Project state
         conversationSummary.current // Layer 3: Conversation summary
       );
@@ -933,10 +914,8 @@ It requires the backend server to communicate with Claude AI.`;
         setMessages(prev => [
           ...prev.filter(msg => msg.id !== streamingMessageId),
           {
-            id: Date.now(),
             role: 'system',
-            isSubscriptionError: true,
-            content: `**AI Limit Reached**\n\nYou’ve used all your free prompts. [Upgrade now](#upgrade) for unlimited access and faster building!`
+            content: `**Free Prompts Exhausted**\n\nYou've used all 25 free AI prompts. To continue using AI features, please subscribe to a paid plan.\n\n**Benefits of subscribing:**\n Unlimited AI prompts\n Priority support\n Advanced features\n Faster response times\n\n[Subscribe Now](#) to continue building amazing projects!`
           }
         ]);
 
@@ -2332,29 +2311,6 @@ Could you provide more details about what you'd like to build?`;
                 <div className="message-content" data-working={msg.isWorking ? 'true' : 'false'}>
                   {(() => {
                     let fileBlockIndex = 0; // Track file blocks separately
-
-                    // Helper to process bold text within a string
-                    const processBoldText = (text, i, partIdx, lastIdx) => {
-                      let boldIndex = 0;
-                      const boldParts = [];
-                      const boldRegexLocal = /\*\*(.+?)\*\*/g;
-                      let match;
-
-                      while ((match = boldRegexLocal.exec(text)) !== null) {
-                        if (match.index > boldIndex) {
-                          boldParts.push(text.substring(boldIndex, match.index));
-                        }
-                        boldParts.push(<strong key={`bold-${i}-${partIdx}-${lastIdx}-${match.index}`}>{match[1]}</strong>);
-                        boldIndex = match.index + match[0].length;
-                      }
-
-                      if (boldIndex < text.length) {
-                        boldParts.push(text.substring(boldIndex));
-                      }
-
-                      return boldParts.length > 0 ? boldParts : text;
-                    };
-
                     return msg.content.split('```').map((part, i) => {
                       if (i % 2 === 1) {
                         // Extract language and filename from first line
@@ -2499,7 +2455,7 @@ Could you provide more details about what you'd like to build?`;
                           tempParts.push(line.substring(tempIndex));
                         }
 
-                        // Then handle links, bold and inline code
+                        // Then handle bold
                         tempParts.forEach((part, partIdx) => {
                           if (typeof part === 'object' && part.type === 'code') {
                             parts.push(<code key={`code-${j}-${partIdx}`} style={{
@@ -2510,57 +2466,22 @@ Could you provide more details about what you'd like to build?`;
                               fontSize: '0.9em'
                             }}>{part.content}</code>);
                           } else if (typeof part === 'string') {
-                            // Handle links [text](url)
-                            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-                            let lastIndex = 0;
-                            let linkMatch;
-
-                            while ((linkMatch = linkRegex.exec(part)) !== null) {
-                              // Text before link
-                              if (linkMatch.index > lastIndex) {
-                                parts.push(processBoldText(part.substring(lastIndex, linkMatch.index), j, partIdx, lastIndex));
+                            let boldIndex = 0;
+                            const boldMatches = [];
+                            const boldRegexLocal = /\*\*(.+?)\*\*/g;
+                            while ((match = boldRegexLocal.exec(part)) !== null) {
+                              if (match.index > boldIndex) {
+                                parts.push(part.substring(boldIndex, match.index));
                               }
-
-                              // The link itself
-                              const linkText = linkMatch[1];
-                              const linkUrl = linkMatch[2];
-
-                              if (linkUrl === '#upgrade') {
-                                parts.push(
-                                  <button
-                                    key={`link-${j}-${linkMatch.index}`}
-                                    className="upgrade-link-btn"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      if (onUpgradeClick) onUpgradeClick();
-                                    }}
-                                  >
-                                    {linkText}
-                                  </button>
-                                );
-                              } else {
-                                parts.push(
-                                  <a
-                                    key={`link-${j}-${linkMatch.index}`}
-                                    href={linkUrl}
-                                    onClick={(e) => {
-                                      if (linkUrl.startsWith('#')) e.preventDefault();
-                                    }}
-                                  >
-                                    {linkText}
-                                  </a>
-                                );
-                              }
-
-                              lastIndex = linkMatch.index + linkMatch[0].length;
+                              parts.push(<strong key={`bold-${j}-${partIdx}-${match.index}`}>{match[1]}</strong>);
+                              boldIndex = match.index + match[0].length;
                             }
-
-                            // Remaining text after last link
-                            if (lastIndex < part.length) {
-                              parts.push(processBoldText(part.substring(lastIndex), j, partIdx, lastIndex));
-                            } else if (lastIndex === 0) {
-                              // No links found
-                              parts.push(processBoldText(part, j, partIdx, 0));
+                            // Only push remaining text if we found bold matches
+                            if (boldIndex > 0 && boldIndex < part.length) {
+                              parts.push(part.substring(boldIndex));
+                            } else if (boldIndex === 0) {
+                              // No bold matches found, push the entire string once
+                              parts.push(part);
                             }
                           }
                         });
@@ -2681,7 +2602,7 @@ Could you provide more details about what you'd like to build?`;
             />
             <div className="ai-input-actions">
               <div className="input-hint">
-                <kbd>Enter</kbd> to send  <kbd>Shift+Enter</kbd> for new line
+                <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line
               </div>
 
               {/* Voice input button */}
