@@ -2,7 +2,7 @@
 
 > **Version:** 1.1.77  
 > **Author:** Sonelise Pakade  
-> **License:** MIT  
+> **License:** Restricted (No commercial gain or modification)  
 > **Platform:** macOS · Windows (cross-platform Electron app)
 
 ---
@@ -256,8 +256,8 @@ eletr0/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/luncedo202/-externai-Desktop.git
-cd -externai-Desktop
+git clone https://github.com/Luncedo1234/Extern.git
+cd Extern
 
 # 2. Install root (Electron + React) dependencies
 npm install

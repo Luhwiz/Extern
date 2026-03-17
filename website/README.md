@@ -66,7 +66,7 @@ jobs:
           publish_dir: ./website
 ```
 
-Access at: `https://luncedo202.github.io/-externai-Desktop`
+Access at: `https://Luncedo1234.github.io/Extern`
 
 ## Update Download Links
 

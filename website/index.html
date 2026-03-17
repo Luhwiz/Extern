@@ -214,15 +214,15 @@
             <div class="other-platforms">
                 <h3>Other Platforms</h3>
                 <div class="platform-links">
-                    <a href="https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-x64.dmg"
+                    <a href="https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-x64.dmg"
                         class="platform-link">macOS (Intel)</a>
-                    <a href="https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-arm64.dmg"
+                    <a href="https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-arm64.dmg"
                         class="platform-link">macOS (Apple Silicon)</a>
-                    <a href="https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-Setup.exe"
+                    <a href="https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-Setup.exe"
                         class="platform-link">Windows</a>
-                    <a href="https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI.AppImage"
+                    <a href="https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI.AppImage"
                         class="platform-link">Linux AppImage</a>
-                    <a href="https://github.com/luncedo202/-externai-Desktop/releases/latest/download/externai_amd64.deb"
+                    <a href="https://github.com/Luncedo1234/Extern/releases/latest/download/externai_amd64.deb"
                         class="platform-link">Linux .deb</a>
                 </div>
             </div>
@@ -272,7 +272,7 @@
 
         <footer>
             © 2025 ExternAI. Built by Sonelise Pakade.
-            <a href="https://github.com/luncedo202/-externai-Desktop" class="github-link" target="_blank">GitHub</a>
+            <a href="https://github.com/Luncedo1234/Extern" class="github-link" target="_blank">GitHub</a>
         </footer>
     </div>
 
@@ -294,23 +294,23 @@
                 const isAppleSilicon = /Mac OS X 10_15|Mac OS X 11|Mac OS X 12|Mac OS X 13|Mac OS X 14/.test(userAgent) && /arm64|aarch64/.test(userAgent);
                 os = 'macOS';
                 if (isAppleSilicon || /M1|M2|M3/.test(userAgent)) {
-                    downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-arm64.dmg';
+                    downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-arm64.dmg';
                     downloadText = 'Download for macOS (Apple Silicon)';
                 } else {
-                    downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-x64.dmg';
+                    downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-x64.dmg';
                     downloadText = 'Download for macOS (Intel)';
                 }
             } else if (windowsPlatforms.indexOf(platform) !== -1) {
                 os = 'Windows';
-                downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-Setup.exe';
+                downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-Setup.exe';
                 downloadText = 'Download for Windows';
             } else if (/Linux/.test(platform)) {
                 os = 'Linux';
-                downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI.AppImage';
+                downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI.AppImage';
                 downloadText = 'Download for Linux';
             } else {
                 downloadText = 'Download ExternAI';
-                downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest';
+                downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest';
             }
 
             return { os, downloadUrl, downloadText };
@@ -325,7 +325,7 @@
         downloadTextEl.textContent = downloadText;
 
         // Fetch latest version and assets from GitHub API
-        fetch('https://api.github.com/repos/luncedo202/-externai-Desktop/releases/latest')
+        fetch('https://api.github.com/repos/Luncedo1234/Extern/releases/latest')
             .then(response => {
                 if (!response.ok) throw new Error('Release not found');
                 return response.json();

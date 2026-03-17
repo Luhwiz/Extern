@@ -35,16 +35,16 @@ function updateDownloadLink() {
     const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'];
     const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'];
     
-    let downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest';
+    let downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest';
     let osLabel = 'Download Now';
 
     if (macosPlatforms.indexOf(platform) !== -1) {
         // macOS - Pointing to the specific asset names created by electron-builder
-        downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-arm64.dmg';
+        downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-arm64.dmg';
         osLabel = 'Download for macOS';
     } else if (windowsPlatforms.indexOf(platform) !== -1) {
         // Windows
-        downloadUrl = 'https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-Setup.exe';
+        downloadUrl = 'https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-Setup.exe';
         osLabel = 'Download for Windows';
     }
 
@@ -61,6 +61,6 @@ window.addEventListener('load', updateDownloadLink);
 
 ## 3. Direct Links (Optional)
 If you prefer static buttons, use these direct links:
-- **macOS (Universal/Apple Silicon)**: `https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-arm64.dmg`
-- **macOS (Intel)**: `https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-x64.dmg`
-- **Windows**: `https://github.com/luncedo202/-externai-Desktop/releases/latest/download/ExternAI-Setup.exe`
+- **macOS (Universal/Apple Silicon)**: `https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-arm64.dmg`
+- **macOS (Intel)**: `https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-x64.dmg`
+- **Windows**: `https://github.com/Luncedo1234/Extern/releases/latest/download/ExternAI-Setup.exe`

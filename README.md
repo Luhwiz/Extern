@@ -83,7 +83,7 @@ npm run dev
 npm run dev
 ```
 
-The backend server runs on `http://localhost:3001` by default and proxies Claude API requests with Firebase authentication. run dist
+The backend server runs on `http://localhost:3001` by default and proxies Claude API requests with Firebase authentication.
 ```
 
 ### Firebase Setup
@@ -215,7 +215,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - feel free to use this project for personal or commercial purposes.
+PROPRIETARY - SEE [LICENSE](LICENSE) FILE.
+This software is provided for individual use only. Modification and commercial use are strictly prohibited without express written permission from the owner.
 
 ## Author
 

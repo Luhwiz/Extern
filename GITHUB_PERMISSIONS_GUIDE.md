@@ -27,7 +27,7 @@ This gives the workflow permission to:
 
 1. Go to your repository on GitHub:
    ```
-   https://github.com/luncedo202/-externai-Desktop
+   https://github.com/Luncedo1234/Extern
    ```
 
 2. Click **Settings** (top right menu)
@@ -116,7 +116,7 @@ permissions:
 ### **Option 1: Check Current Run**
 ```bash
 # View the workflow status
-open https://github.com/luncedo202/-externai-Desktop/actions
+open https://github.com/Luncedo1234/Extern/actions
 ```
 
 Look for:
@@ -193,7 +193,7 @@ Before running a release:
 - [ ] `package.json` version is updated
 - [ ] Changes are committed and pushed
 - [ ] Tag is created and pushed: `git push origin v1.0.0`
-- [ ] Monitor at: https://github.com/luncedo202/-externai-Desktop/actions
+- [ ] Monitor at: https://github.com/Luncedo1234/Extern/actions
 
 ---
 

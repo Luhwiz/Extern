@@ -158,8 +158,8 @@ git subtree push --prefix website origin gh-pages
     "productName": "ExternAI",
     "publish": {
       "provider": "github",
-      "owner": "luncedo202",
-      "repo": "-externai-Desktop"
+      "owner": "Luncedo1234",
+      "repo": "Extern"
     }
   }
 }
@@ -207,11 +207,11 @@ dist/
 
 ### Check GitHub Actions
 
-Visit: https://github.com/luncedo202/-externai-Desktop/actions
+Visit: https://github.com/Luncedo1234/Extern/actions
 
 ### Check Releases
 
-Visit: https://github.com/luncedo202/-externai-Desktop/releases
+Visit: https://github.com/Luncedo1234/Extern/releases
 
 ### Update Metrics
 

@@ -62,7 +62,7 @@ git push origin main --tags
 
 ### Step 3: Watch GitHub Actions Build
 
-Visit: https://github.com/luncedo202/-externai-Desktop/actions
+Visit: https://github.com/Luncedo1234/Extern/actions
 
 GitHub Actions will automatically:
 1. Build macOS installers (.dmg for Intel and Apple Silicon)

@@ -79,7 +79,7 @@ az webapp config appsettings set \
 az webapp deployment source config \
   --name eletr0-backend \
   --resource-group eletr0-backend-rg \
-  --repo-url https://github.com/luncedo202/-externai-Desktop \
+  --repo-url https://github.com/Luncedo1234/Extern \
   --branch main \
   --manual-integration
 
@@ -98,8 +98,8 @@ az webapp config appsettings set \
 3. Go to **Deployment Center**
 4. Select **GitHub**
 5. Authorize and select:
-   - **Organization:** luncedo202
-   - **Repository:** -externai-Desktop
+   - **Organization:** Luncedo1234
+   - **Repository:** Extern
    - **Branch:** main
 6. Click **Save**
 
