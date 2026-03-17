@@ -38,6 +38,18 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+if (import.meta.env.DEV) {
+  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+  if (!apiKey) {
+    console.error('[Firebase] ERROR: VITE_FIREBASE_API_KEY is missing from environment.');
+    console.log('[Firebase] Please ensure your .env file exists in the root directory and contains VITE_FIREBASE_API_KEY.');
+  } else if (!apiKey.startsWith('AIzaSy')) {
+    console.error('[Firebase] ERROR: VITE_FIREBASE_API_KEY does not appear to be a valid Firebase API key (should start with AIzaSy).');
+  } else {
+    console.log('[Firebase] API Key found and appears valid (prefix: AIzaSy)');
+  }
+}
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
