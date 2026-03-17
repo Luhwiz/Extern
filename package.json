@@ -71,8 +71,8 @@
         "copyright": "Copyright © 2025 ${author}",
         "publish": {
             "provider": "github",
-            "owner": "luncedo202",
-            "repo": "-externai-Desktop",
+            "owner": "Luncedo1234",
+            "repo": "Extern",
             "timeout": 600000
         },
         "directories": {
