@@ -3108,7 +3108,13 @@ Could you provide more details about what you'd like to build?`;
 
         {/* Dev server URL bar */}
         {devServerUrl && (
-          <div className="dev-server-bar" onClick={() => { window.electronAPI?.openExternal?.(devServerUrl) || window.open(devServerUrl, '_blank'); }}>
+          <div className="dev-server-bar" onClick={() => {
+            if (window.electronAPI?.shell?.openExternal) {
+              window.electronAPI.shell.openExternal(devServerUrl);
+            } else {
+              window.open(devServerUrl, '_blank');
+            }
+          }}>
             <span className="dev-server-dot"></span>
             <span>Click to open</span>
             <span className="dev-server-url">{devServerUrl}</span>

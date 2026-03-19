@@ -64,8 +64,12 @@ async function createWindow() {
       sandbox: false,
     },
     icon: path.join(__dirname, '../../assets/icon.png'),
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 10, y: 10 },
+    ...(process.platform === 'darwin' ? {
+      titleBarStyle: 'hiddenInset',
+      trafficLightPosition: { x: 10, y: 10 },
+    } : {
+      titleBarStyle: 'default',
+    }),
   });
 
   // Set Content Security Policy
