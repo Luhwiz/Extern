@@ -33,6 +33,7 @@ const Panel = forwardRef(({
   const fitAddons = useRef({});
   const backendTerminalIds = useRef({}); // Store backend terminal IDs
   const terminalOutputBuffers = useRef({}); // Store output per terminal
+  const urlDetectionBuffers = useRef({});
   const lastCommands = useRef({}); // Store last command per terminal
   const commandStartTime = useRef({}); // Track when command started
   const commandExplained = useRef({}); // Track if current command was already explained
@@ -134,6 +135,7 @@ const Panel = forwardRef(({
 
       // Initialize output buffer
       terminalOutputBuffers.current[terminalId] = '';
+      urlDetectionBuffers.current[terminalId] = '';
 
       const term = new XTerm({
         cursorBlink: true,
@@ -271,21 +273,41 @@ const Panel = forwardRef(({
               onTerminalOutput(terminalId, data, terminalOutputBuffers.current[terminalId]);
             }
 
-            // Detect dev server URLs from terminal output
+            // Detect dev server URLs from terminal output (buffered for fragmentation)
             if (onDevServerDetected) {
               const urlPatterns = [
-                /(?:Local|➜\s+Local):\s+(https?:\/\/[^\s]+)/i,
+                /(?:Local|➜\s+Local|Network|➜\s+Network):\s+(https?:\/\/[^\s]+)/i,
                 /(?:running on|listening on|server running at|Application started at):\s+(https?:\/\/[^\s]+)/i,
                 /https?:\/\/localhost:\d+/i,
                 /http:\/\/127\.0\.0\.1:\d+/i,
+                /http:\/\/0\.0\.0\.0:\d+/i,
+                /https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:\d+/i
               ];
-              const cleanData = data.replace(/\x1b\[[0-9;]*m/g, '');
+              
+              const cleanChunk = data.replace(/\x1b\[[0-9;]*m/g, '');
+              let buffer = (urlDetectionBuffers.current[terminalId] || '') + cleanChunk;
+              
+              // Keep buffer at reasonable size
+              if (buffer.length > 2000) buffer = buffer.slice(-2000);
+              urlDetectionBuffers.current[terminalId] = buffer;
+
               for (const pattern of urlPatterns) {
-                const match = cleanData.match(pattern);
+                const match = buffer.match(pattern);
                 if (match) {
                   const detectedUrl = (match[1] || match[0]).trim();
-                  onDevServerDetected(detectedUrl);
-                  break;
+                  
+                  // Only accept if it looks like a complete URL (ends in space, newline, or we have enough context)
+                  // For localhost:\d+ we can be more confident
+                  const isSpecificPattern = pattern.source.includes('\\d+');
+                  const isTerminated = /[\s\r\n]/.test(buffer.slice(match.index + match[0].length, match.index + match[0].length + 1)) 
+                                      || data.includes('\r') || data.includes('\n');
+
+                  if (isSpecificPattern || isTerminated) {
+                    console.log('🌐 Auto-detected dev server from terminal (buffered):', detectedUrl);
+                    onDevServerDetected(detectedUrl);
+                    urlDetectionBuffers.current[terminalId] = ''; // Reset buffer on match
+                    break;
+                  }
                 }
               }
             }

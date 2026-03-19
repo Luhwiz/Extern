@@ -159,30 +159,48 @@ function App() {
   }, [panelVisible, sidebarVisible]);
 
   const lastProcessedLogIndexRef = useRef(-1);
+  const logBufferRef = useRef('');
 
-  // Monitor output logs for dev server URLs
+  // Monitor output logs for dev server URLs (buffered for fragmentation)
   useEffect(() => {
     if (outputLogs.length > lastProcessedLogIndexRef.current + 1) {
+      const urlPatterns = [
+        /(?:Local|➜\s+Local|Network|➜\s+Network):\s+(https?:\/\/[^\s]+)/i,
+        /(?:running on|listening on|server running at|Application started at):\s+(https?:\/\/[^\s]+)/i,
+        /https?:\/\/localhost:\d+/i,
+        /http:\/\/127\.0\.0\.1:\d+/i,
+        /http:\/\/0\.0\.0\.0:\d+/i,
+        /https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:\d+/i
+      ];
+
       // Process all new logs since last check
       for (let i = lastProcessedLogIndexRef.current + 1; i < outputLogs.length; i++) {
         const lastLog = outputLogs[i];
-        const logText = typeof lastLog === 'string' ? lastLog : (lastLog.message || '');
-
-        const urlPatterns = [
-          /(?:Local|➜\s+Local|Network|➜\s+Network):\s+(https?:\/\/[^\s]+)/i,
-          /(?:running on|listening on|server running at|Application started at):\s+(https?:\/\/[^\s]+)/i,
-          /https?:\/\/localhost:\d+/i,
-          /http:\/\/127\.0\.0\.1:\d+/i,
-          /https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:\d+/i
-        ];
+        const logContent = typeof lastLog === 'string' ? lastLog : (lastLog.message || '');
+        const cleanContent = logContent.replace(/\x1b\[[0-9;]*m/g, '');
+        
+        logBufferRef.current += cleanContent;
+        // Keep buffer at reasonable size
+        if (logBufferRef.current.length > 2000) logBufferRef.current = logBufferRef.current.slice(-2000);
+        
+        const buffer = logBufferRef.current;
 
         for (const pattern of urlPatterns) {
-          const match = logText.match(pattern);
+          const match = buffer.match(pattern);
           if (match) {
-            const detectedUrl = (match[1] || match[0]).replace(/\x1b\[[0-9;]*m/g, '').trim();
-            console.log('🌐 Auto-detected dev server from logs:', detectedUrl);
-            handleDevServerDetected(detectedUrl);
-            break;
+            const detectedUrl = (match[1] || match[0]).trim();
+            
+            // Only accept if it looks like a complete URL 
+            const isSpecificPattern = pattern.source.includes('\\d+');
+            const isTerminated = /[\s\r\n]/.test(buffer.slice(match.index + match[0].length, match.index + match[0].length + 1))
+                                || logContent.includes('\r') || logContent.includes('\n');
+
+            if (isSpecificPattern || isTerminated) {
+              console.log('🌐 Auto-detected dev server from logs (buffered):', detectedUrl);
+              handleDevServerDetected(detectedUrl);
+              logBufferRef.current = ''; // Reset buffer on match
+              break;
+            }
           }
         }
       }
