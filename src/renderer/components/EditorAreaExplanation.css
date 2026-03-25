@@ -21,7 +21,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--vscode-border);
+  border-right: none !important;
   transition: flex 0.2s ease;
 }
 
@@ -39,7 +39,7 @@
   justify-content: space-between;
   padding: 10px 12px;
   background: var(--vscode-sidebar-bg);
-  border-bottom: 1px solid var(--vscode-border);
+  border-bottom: none !important;
   flex-shrink: 0;
 }
 
@@ -157,8 +157,9 @@
 
 /* Divider */
 .expl-panel-divider {
-  height: 1px;
-  background: var(--vscode-border);
+  height: 0;
+  background: transparent;
+  display: none !important;
   flex-shrink: 0;
 }
 
@@ -199,7 +200,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 11px 16px;
-  border-bottom: 1px solid var(--vscode-border);
+  border-bottom: none !important;
   transition: background 0.12s;
 }
 
@@ -341,7 +342,7 @@
 
 .explanation-header {
   padding: 24px 32px 16px;
-  border-bottom: 1px solid var(--vscode-border);
+  border-bottom: none !important;
   background: var(--vscode-sidebar-bg);
 }
 

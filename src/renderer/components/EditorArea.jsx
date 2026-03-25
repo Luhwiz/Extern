@@ -34,7 +34,7 @@ const GitHubIconBtn = () => (
 function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onContentChange, onOpenFolder, onStartBuilding, onBuildIdea, theme, onPreviewClick, onPublishClick, onCursorChange, pendingPlan, devServerUrl, showSupabase, onSupabaseToggle, showGitHub, onGitHubToggle, showIntegrations, onIntegrationsToggle, onSendToAI, workspaceFolder }) {
   const [showHowTo, setShowHowTo] = React.useState(false);
   const [previewUrl, setPreviewUrl] = useState('http://localhost:3000');
-  const [fontSize, setFontSize] = useState(14);
+  const [fontSize, setFontSize] = useState(8.5);
   const [tabSize, setTabSize] = useState(2);
   const [viewMode, setViewMode] = useState('split'); // 'split', 'code', 'explanation'
   const [fileExplanations, setFileExplanations] = useState({}); // Cache explanations per file
@@ -140,6 +140,16 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
   };
 
   const handleEditorDidMount = (editor, monaco) => {
+    // Define a custom light theme that matches the app's greyish aesthetic
+    monaco.editor.defineTheme('premium-light', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#f2f2f2',
+      }
+    });
+
     // Initial position update
     const position = editor.getPosition();
     if (position && onCursorChange) {
@@ -184,7 +194,7 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
   };
 
   // Determine Monaco theme based on app theme
-  const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light';
+  const monacoTheme = theme === 'dark' ? 'vs-dark' : 'premium-light';
 
   return (
     <div className="editor-area">
@@ -307,6 +317,7 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
                       loading={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--vscode-fg)' }}>Loading editor...</div>}
                       options={{
                         fontSize: fontSize,
+                        lineHeight: 12,
                         fontFamily: "Menlo, Monaco, 'Courier New', monospace",
                         fontLigatures: true,
                         minimap: { enabled: true },
@@ -383,161 +394,7 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
             )}
           </div>
         ) : (
-          <div className="editor-welcome">
-            <div className="welcome-bg-glow"></div>
-            <div className="welcome-content">
-              <div className="welcome-badge">AI-Powered</div>
-              <h1 className="welcome-title">Build Anything with <span className="welcome-gradient-text">ExternAI</span></h1>
-              <p className="welcome-subtitle">Describe your idea. We write the code. You ship the product.</p>
-              <button className="welcome-howto-link" onClick={() => setShowHowTo(true)}>
-                How to use ExternAI →
-              </button>
-
-              {showHowTo && (
-                <div className="howto-overlay" onClick={() => setShowHowTo(false)}>
-                  <div className="howto-modal" onClick={e => e.stopPropagation()}>
-                    <div className="howto-header">
-                      <h2>How to use ExternAI</h2>
-                      <button className="howto-close" onClick={() => setShowHowTo(false)}>✕</button>
-                    </div>
-                    <div className="howto-body">
-
-                      <div className="howto-section-title">Getting Started</div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">1</div>
-                        <div>
-                          <strong>Create or open a project folder</strong>
-                          <p>Before ExternAI can build anything, it needs a home for your project files. Click the <em>Explorer</em> icon on the left sidebar, then click <em>Open Folder</em>. Choose an existing folder on your computer, or create a new empty folder (e.g. <code>my-startup</code>) and open that. Every file ExternAI creates will be saved inside this folder. You can open any folder at any time — ExternAI will read the existing files and understand your project context automatically.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">2</div>
-                        <div>
-                          <strong>Describe your idea in plain English</strong>
-                          <p>Once your folder is open, go to the chat panel on the right side. Type a description of what you want to build — as if you were explaining it to a friend. You do not need to know anything about code. Be as specific as possible for best results. For example: <em>"Build me a SaaS platform where users can sign up, choose a subscription plan, and manage their team members. Use Stripe for payments and send a welcome email when they sign up."</em> The more detail you give, the closer the first version will be to what you want. You can always refine it afterwards.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">3</div>
-                        <div>
-                          <strong>Watch ExternAI build your project</strong>
-                          <p>After you send your message, ExternAI analyses your request and starts writing code immediately. It creates every file your project needs — frontend pages, backend logic, database schemas, configuration files, and more. You will see the files appear in the Explorer panel on the left in real time. ExternAI also runs terminal commands automatically (e.g. <code>npm install</code>) to install dependencies and set up your project. You do not need to touch the terminal yourself. If something goes wrong during setup, ExternAI detects the error and fixes it automatically.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-section-title">Working on your project</div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">4</div>
-                        <div>
-                          <strong>Ask for changes, fixes, and new features</strong>
-                          <p>Think of the chat as your development team. After the first version is built, you can ask for anything: <em>"Change the colour scheme to dark blue and white"</em>, <em>"Add a search bar to the top of the page"</em>, <em>"Make the pricing page show three tiers: Free, Pro, and Enterprise"</em>. ExternAI reads the existing files in your project so it always has full context. It will update only the files that need to change and leave the rest untouched. You can go back and forth as many times as you like — there is no limit to how many changes you can request.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">5</div>
-                        <div>
-                          <strong>Preview your app live</strong>
-                          <p>Click the <em>Preview</em> button in the top toolbar of the editor area. ExternAI will start a local development server and open your app inside the preview panel. You can see exactly what your users will see. The preview updates as you make changes. If the app has a login page, you can test it directly in the preview. If you need to test payment flows or external services, use the browser's developer tools or ask ExternAI to add test mode credentials for you.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">6</div>
-                        <div>
-                          <strong>Edit files directly if needed</strong>
-                          <p>You can click any file in the Explorer to open it in the code editor. The editor works just like VS Code — you can type, select, copy and paste, and save changes manually. If you make a manual edit and want ExternAI to build on top of it, simply go back to the chat and describe what to do next. ExternAI will read your latest file versions and continue from there. Manual edits and AI edits can be mixed freely.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-section-title">Connecting services &amp; deploying</div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">7</div>
-                        <div>
-                          <strong>Add integrations (Stripe, Supabase, email &amp; more)</strong>
-                          <p>Click the <em>Integrations</em> button in the top toolbar. You will see a list of popular services you can add to your project: <strong>Stripe</strong> for accepting payments, <strong>Supabase</strong> for a real-time database and user authentication, <strong>Resend</strong> for sending transactional emails, <strong>Cloudinary</strong> for image uploads, <strong>Google Maps</strong> for location features, and many more. Click any integration to see step-by-step setup instructions. Once you paste in your API keys, ExternAI will wire up the integration into your code automatically — you do not need to write any configuration yourself.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">8</div>
-                        <div>
-                          <strong>Publish your app online</strong>
-                          <p>When you are happy with your app, click the <em>Publish</em> button in the top toolbar. ExternAI will bundle all your project files and deploy them to our cloud hosting instantly. Within seconds you will receive a public URL that you can share with anyone — no Vercel account, no Netlify account, no server setup required. The URL is permanent and your app will stay online as long as you keep it published. You can republish at any time to push updates. To see all your published apps and their links, click the <em>Published Apps</em> icon in the left sidebar.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-step">
-                        <div className="howto-step-num">9</div>
-                        <div>
-                          <strong>Connect to GitHub (version control)</strong>
-                          <p>Click the <em>GitHub</em> button in the top toolbar to connect your project to a GitHub repository. This lets you save snapshots of your code (commits), collaborate with others, and roll back to a previous version if something goes wrong. If you do not have a GitHub account, you can create one for free at github.com. ExternAI will guide you through authenticating and selecting or creating a repository. Once connected, you can push your latest code to GitHub directly from ExternAI with one click.</p>
-                        </div>
-                      </div>
-
-                      <div className="howto-section-title">Tips for best results</div>
-
-                      <div className="howto-tip">💡 <strong>Be specific.</strong> Instead of "make it look better", say "use a white background, dark navy text, and rounded cards with a subtle shadow."</div>
-                      <div className="howto-tip">💡 <strong>One thing at a time.</strong> If you want 5 new features, ask for them one by one. This makes it easier to review each change.</div>
-                      <div className="howto-tip">💡 <strong>Describe problems, not solutions.</strong> Instead of "change line 42 in App.jsx", say "the login button is not working when I click it." ExternAI will find the problem and fix it.</div>
-                      <div className="howto-tip">💡 <strong>Use images.</strong> Drag and drop a screenshot or design mockup into the chat. ExternAI can read images and build a UI that matches what you show it.</div>
-                      <div className="howto-tip">💡 <strong>Your chat history is saved.</strong> ExternAI remembers your full conversation per project. You can close the app and come back later — the context is preserved.</div>
-
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {workspaceFolder ? (
-                <button className="welcome-start-btn" onClick={onStartBuilding}>
-                  Build mode
-                </button>
-              ) : (
-                <>
-                  <button className="welcome-start-btn" onClick={onStartBuilding}>
-                    Start Building
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </button>
-
-                  <p className="welcome-hint">or try one of these ideas ↓</p>
-
-                  <div className="welcome-examples">
-                    {[
-                      { title: 'SaaS Starter',        desc: 'Sign up, pay & manage your team',        color: '#2563eb' },
-                      { title: 'AI Chatbot App',       desc: 'Chat with an AI that remembers you',     color: '#0ea5e9' },
-                      { title: 'Online Store',         desc: 'Sell products & accept payments',        color: '#10b981' },
-                      { title: 'Social Network',       desc: 'Post, follow friends & send messages',   color: '#f59e0b' },
-                      { title: 'Project Manager',      desc: 'Track tasks & work with your team',      color: '#6366f1' },
-                      { title: 'Job Board',            desc: 'Post jobs & collect applications',       color: '#ef4444' },
-                      { title: 'Live Dashboard',       desc: 'See your data update in real time',      color: '#06b6d4' },
-                      { title: 'Video Platform',       desc: 'Upload, watch & comment on videos',      color: '#ec4899' },
-                      { title: 'Booking App',          desc: 'Let customers book time & pay online',   color: '#8b5cf6' },
-                    ].map((item) => (
-                      <div
-                        key={item.title}
-                        className="welcome-example-card"
-                        style={{ '--card-color': item.color }}
-                        onClick={() => onBuildIdea(`Build me a ${item.title} — ${item.desc}`)}
-                      >
-                        <div className="example-icon-dot" style={{ background: item.color + '22', border: `1px solid ${item.color}44` }}>
-                          <div className="example-dot" style={{ background: item.color }}></div>
-                        </div>
-                        <div className="example-text">
-                          <div className="example-title">{item.title}</div>
-                          <div className="example-desc">{item.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          <div className="editor-welcome-empty" />
         )}
       </div>
     </div>

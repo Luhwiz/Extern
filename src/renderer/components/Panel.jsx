@@ -3,9 +3,6 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { FiX } from 'react-icons/fi';
 import '@xterm/xterm/css/xterm.css';
-import OutputPanel from './panels/OutputPanel';
-import CommandExplanationService from '../services/CommandExplanationService';
-import './Panel.css';
 
 const Panel = forwardRef(({ 
   terminals, 
@@ -25,9 +22,6 @@ const Panel = forwardRef(({
 }, ref) => {
   const [activeTab, setActiveTab] = useState('terminal');
   const [activeTerminal, setActiveTerminal] = useState(terminals.length > 0 ? terminals[0].id : null);
-  const [terminalViewMode, setTerminalViewMode] = useState({}); // 'output' or 'explanation' per terminal
-  const [terminalExplanations, setTerminalExplanations] = useState({}); // Store explanations per terminal
-  const [loadingExplanation, setLoadingExplanation] = useState({}); // Loading state per terminal
   const terminalRefsMap = useRef({});
   const terminalInstances = useRef({});
   const fitAddons = useRef({});
@@ -142,7 +136,7 @@ const Panel = forwardRef(({
         fontSize: 12,
         fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
         theme: theme === 'light' ? {
-          background: '#ffffff',
+          background: '#f2f2f2',
           foreground: '#3b3b3b',
           cursor: '#3b3b3b',
           selection: '#add6ff',
@@ -322,31 +316,6 @@ const Panel = forwardRef(({
               
               if (hasError) {
                 onUpdateTerminalStatus(terminalId, 'error');
-              } else if (hasSuccess) {
-                onUpdateTerminalStatus(terminalId, 'success');
-                
-                // Generate explanation for successful command
-                const command = lastCommands.current[terminalId];
-                const timeSinceCommand = Date.now() - (commandStartTime.current[terminalId] || 0);
-                
-                // Only explain if we have a recent command (within last 2 minutes) and haven't already explained it
-                if (command && timeSinceCommand < 120000 && !commandExplained.current[terminalId]) {
-                  commandExplained.current[terminalId] = true; // Mark as explained immediately to prevent duplicates
-                  console.log('[Panel] Generating explanation for:', command);
-                  setLoadingExplanation(prev => ({ ...prev, [terminalId]: true }));
-                  
-                  CommandExplanationService.explainCommand(
-                    command,
-                    terminalOutputBuffers.current[terminalId] || ''
-                  ).then(explanation => {
-                    setTerminalExplanations(prev => ({ ...prev, [terminalId]: explanation }));
-                    setTerminalViewMode(prev => ({ ...prev, [terminalId]: 'explanation' }));
-                    setLoadingExplanation(prev => ({ ...prev, [terminalId]: false }));
-                  }).catch(error => {
-                    console.error('[Panel] Error generating explanation:', error);
-                    setLoadingExplanation(prev => ({ ...prev, [terminalId]: false }));
-                  });
-                }
               }
             }
           }
@@ -375,6 +344,7 @@ const Panel = forwardRef(({
         initTerminal(t.id);
       }
     });
+    // Cleanup on unmount or activeTerminal change
   }, [activeTerminal, workspaceFolder, theme, onTerminalOutput, onUpdateTerminalStatus]);
 
   // Re-fit all terminals when panel becomes visible
@@ -401,113 +371,30 @@ const Panel = forwardRef(({
   }, [visible]);
 
   return (
-    <div className="panel">
-      <div className="panel-tabs">
-        <div className="panel-tab-list">
+    <div className="panel" style={{ height: '300px', backgroundColor: '#f2f2f2', borderTop: 'none', display: 'flex', flexDirection: 'column' }}>
+      <div className="panel-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f2f2f2', borderBottom: 'none', padding: '0 10px', height: '35px' }}>
+        <div className="panel-tab-list" style={{ display: 'flex', gap: '4px' }}>
           <button
             className={`panel-tab ${activeTab === 'terminal' ? 'active' : ''}`}
             onClick={() => setActiveTab('terminal')}
+            style={{ padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', color: activeTab === 'terminal' ? '#000000' : '#6b7280', fontWeight: activeTab === 'terminal' ? '700' : '500' }}
           >
             Terminal
           </button>
         </div>
-        {activeTab === 'terminal' && (
-          <div className="terminal-tabs">
-            {terminals.map((terminal) => (
-              <button
-                key={terminal.id}
-                className={`terminal-tab ${activeTerminal === terminal.id ? 'active' : ''} ${terminal.status || ''}`}
-                onClick={() => {
-                  if (activeTerminal !== terminal.id) {
-                    setActiveTerminal(terminal.id);
-                  }
-                }}
-              >
-                {terminal.status && (
-                  <span className={`terminal-status-dot ${terminal.status}`} />
-                )}
-                <span className="terminal-tab-name">{terminal.name}</span>
-                <span 
-                  className="terminal-close-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseTerminal(terminal.id);
-                  }}
-                >
-                  <FiX size={14} />
-                </span>
-              </button>
-            ))}
-            <button className="new-terminal-button" onClick={onNewTerminal}>
-              +
-            </button>
-          </div>
-        )}
+        {/* Terminal tabs and new button removed as requested */}
       </div>
-      <div className="panel-content">
+      <div className="panel-content" style={{ flex: 1, overflow: 'hidden', backgroundColor: '#f2f2f2' }}>
         {activeTab === 'terminal' && terminals.length > 0 && (
           <>
-            {/* Terminal view mode tabs (Explanation / Output) */}
-            {activeTerminal && (
-              <div className="terminal-view-tabs">
-                <button
-                  className={`terminal-view-tab ${(terminalViewMode[activeTerminal] || 'explanation') === 'explanation' ? 'active' : ''}`}
-                  onClick={() => setTerminalViewMode(prev => ({ ...prev, [activeTerminal]: 'explanation' }))}
-                >
-                  Explanation
-                </button>
-                <button
-                  className={`terminal-view-tab ${(terminalViewMode[activeTerminal] || 'explanation') === 'output' ? 'active' : ''}`}
-                  onClick={() => setTerminalViewMode(prev => ({ ...prev, [activeTerminal]: 'output' }))}
-                >
-                  Output
-                </button>
-              </div>
-            )}
-            
-            {/* Explanation view */}
-            {activeTerminal && (terminalViewMode[activeTerminal] || 'explanation') === 'explanation' && (
-              <div className="terminal-explanation-view">
-                <div className="terminal-explanation-content">
-                  {terminalExplanations[activeTerminal] ? (
-                    <>
-                      <div className="terminal-explanation-header">
-                        <span className="terminal-explanation-icon">💡</span>
-                        <span className="terminal-explanation-title">Plain English</span>
-                      </div>
-                      <div className="terminal-explanation-text">
-                        <span className="terminal-explanation-tick">✓</span>
-                        {terminalExplanations[activeTerminal].split(/(https?:\/\/[^\s)]+)/g).map((part, i) =>
-                          /^https?:\/\//.test(part) ? (
-                            <a key={i} href="#" className="terminal-explanation-link" onClick={(e) => { e.preventDefault(); window.electronAPI?.openExternal?.(part) || window.open(part, '_blank'); }}>{part}</a>
-                          ) : part
-                        )}
-                      </div>
-                      {lastCommands.current[activeTerminal] && (
-                        <div className="terminal-explanation-command">
-                          <strong>Command:</strong> <code>{lastCommands.current[activeTerminal]}</code>
-                        </div>
-                      )}
-                    </>
-                  ) : loadingExplanation[activeTerminal] ? (
-                    <div className="terminal-explanation-loading">
-                      <div className="spinner"></div>
-                      <span>Generating explanation...</span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )}
-            
             {/* Terminal output view */}
-            <div className="terminals-container" style={{
-              display: (terminalViewMode[activeTerminal] === 'output') ? 'block' : 'none'
-            }}>
+            <div className="terminals-container" style={{ width: '100%', height: '100%', position: 'relative' }}>
               {terminals.map((terminal) => (
                 <div
                   key={terminal.id}
                   ref={(el) => (terminalRefsMap.current[terminal.id] = el)}
                   className={`terminal-instance ${activeTerminal === terminal.id ? 'active' : 'hidden'}`}
+                  style={{ width: '100%', height: '100%', padding: '10px', backgroundColor: '#f2f2f2', display: activeTerminal === terminal.id ? 'block' : 'none' }}
                   data-terminal-id={backendTerminalIds.current[terminal.id] || ''}
                   data-id={terminal.id}
                 />

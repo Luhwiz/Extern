@@ -399,25 +399,7 @@ function Explorer({ workspaceFolder, onOpenFile, onOpenFolder, refreshTrigger, o
 
   return (
     <div className="explorer">
-      <div className="explorer-header">
-        <span className="explorer-title">EXPLORER</span>
-        <div className="explorer-actions">
-          <button
-            className="action-btn"
-            onClick={handleRefresh}
-            title="Refresh Explorer"
-          >
-            <FiRefreshCw size={14} />
-            {hasAiResponded && <span className="refresh-badge">Click me</span>}
-          </button>
-          <button className="action-btn" onClick={handleNewFile} title="New File">
-            <FiFilePlus size={14} />
-          </button>
-          <button className="action-btn" onClick={handleNewFolder} title="New Folder">
-            <FiFolderPlus size={14} />
-          </button>
-        </div>
-      </div>
+      {/* Explorer header removed as requested in card layout */}
 
       {hasAiResponded && (
         <div className="explorer-refresh-tip">

@@ -237,13 +237,13 @@
 
 /* Light theme */
 [data-theme="light"] .published-apps-modal {
-  background: #ffffff;
-  border-color: #e0e0e0;
+  background: var(--vscode-bg);
+  border-color: var(--vscode-border);
 }
 
 [data-theme="light"] .app-card {
-  background: #f5f5f5;
-  border-color: #e0e0e0;
+  background: var(--vscode-sidebar-bg);
+  border-color: var(--vscode-border);
 }
 
 [data-theme="light"] .app-card:hover {

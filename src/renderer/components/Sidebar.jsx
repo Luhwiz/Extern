@@ -1,4 +1,5 @@
 import React from 'react';
+import { FiZap } from 'react-icons/fi';
 import Explorer from './sidebar/Explorer';
 import Search from './sidebar/Search';
 import SourceControl from './sidebar/SourceControl';

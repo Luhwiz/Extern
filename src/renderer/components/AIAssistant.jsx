@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { FiX, FiSend, FiAlertCircle, FiDownload, FiFileText, FiFilePlus, FiEdit3, FiEye, FiCheck, FiLoader, FiCode, FiSettings, FiImage, FiFile } from 'react-icons/fi';
+import { FiX, FiSend, FiAlertCircle, FiDownload, FiFileText, FiFilePlus, FiEdit3, FiEye, FiCheck, FiLoader, FiCode, FiSettings, FiImage, FiFile, FiZap, FiChevronRight } from 'react-icons/fi';
 import { SiJavascript, SiReact, SiHtml5, SiCss3, SiJson, SiMarkdown, SiPython, SiTypescript, SiNodedotjs } from 'react-icons/si';
 import ClaudeService from '../services/ClaudeService';
 import AnalyticsService from '../services/AnalyticsService';
@@ -320,7 +320,7 @@ const AIAssistant = forwardRef(({
         if (saved) return JSON.parse(saved);
       } catch { }
     }
-    return [defaultWelcome];
+    return []; // Start with empty state to show suggestions card
   });
 
   // Save and restore chat history per project when workspaceFolder changes
@@ -346,12 +346,12 @@ const AIAssistant = forwardRef(({
           .map(msg => ({ role: msg.role, content: msg.content }));
       } catch (err) {
         console.error('Failed to restore chat history:', err);
-        setMessages([defaultWelcome]);
+        setMessages([]);
         conversationHistory.current = [];
       }
     } else {
       // New project - start fresh
-      setMessages([defaultWelcome]);
+      setMessages([]);
       conversationHistory.current = [];
     }
 
@@ -2408,35 +2408,55 @@ Could you provide more details about what you'd like to build?`;
   return (
     <div className="ai-assistant">
       <div className="ai-header">
-        <div className="ai-header-content">
-          {currentUser?.email && (
-            <div className="ai-user-email">
-              <div className="ai-user-avatar">
-                {(currentUser.displayName || currentUser.email).charAt(0).toUpperCase()}
+        <div className="ai-header-left">
+          <div className="ai-header-logo">
+            <FiZap size={16} color="#7c3aed" />
+          </div>
+          <div className="ai-header-info">
+            <div className="ai-header-title">ExternAI</div>
+            {subscription && subscription.tier === 'free' && (
+              <div className="prompts-remaining">
+                {subscription.freePromptsRemaining || 0} prompts left
               </div>
-              <span>{currentUser.email}</span>
-            </div>
-          )}
-          {subscription && subscription.tier === 'free' && (
-            <div className="subscription-status">
-              <span className="prompts-remaining">
-                {subscription.freePromptsRemaining || 0} free prompts left
-              </span>
-            </div>
-          )}
-
+            )}
+          </div>
         </div>
         <button className="ai-close" onClick={onClose}>
           <FiX size={18} />
         </button>
       </div>
-      {error && (
+      <div className="ai-chat-card">
+        {error && (
         <div className="ai-error-banner">
           <FiAlertCircle size={16} />
           <span>Check your API configuration</span>
         </div>
       )}
       <div className="ai-messages" ref={messagesContainerRef}>
+        {messages.length === 0 && !isLoading && (
+          <div className="ai-suggestions-container">
+            <div className="ai-suggestions-card">
+              {[
+                "Build a social media dashboard with analytics",
+                "Create a restaurant landing page with menu",
+                "Make a fitness tracker with workout logs",
+                "Build an e-commerce product showcase"
+              ].map((suggestion, idx) => (
+                <div 
+                  key={idx} 
+                  className="ai-suggestion-item"
+                  onClick={() => {
+                    setInput(suggestion);
+                    // Optional: handle automatic submission if desired
+                  }}
+                >
+                  <FiChevronRight className="suggestion-icon" size={14} />
+                  <span>{suggestion}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {(() => {
           // Filter out duplicate messages
           const uniqueMessages = messages.filter((msg, idx, arr) => {
@@ -3137,68 +3157,35 @@ Could you provide more details about what you'd like to build?`;
           </div>
         )}
         <div className="ai-input-inner">
-          <div className="ai-input-textarea-wrap">
-            <textarea
-              className="ai-input"
-              placeholder={isTerminalBusy ? "Terminal active - Waiting to complete..." : "What would you like to build today?"}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                // Submit on Enter, add newline on Shift+Enter
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-              disabled={isLoading || isTerminalBusy}
-              rows={3}
-            />
-            {input.trim() && (
-              <button
-                type="button"
-                className="ai-input-clear"
-                onClick={() => setInput('')}
-                title="Clear input"
-              >
-                <FiX size={14} />
-              </button>
+          <textarea
+            className="ai-input"
+            placeholder="Describe your vision..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            disabled={isLoading || isTerminalBusy}
+            rows={1}
+          />
+          <button
+            type="submit"
+            className="ai-send-btn"
+            disabled={!input.trim() || isLoading || isTerminalBusy}
+          >
+            {isLoading || isTerminalBusy ? (
+              <FiLoader className="spinning" size={18} />
+            ) : (
+              <FiSend size={18} />
             )}
-          </div>
-          <div className="ai-input-actions">
-            <div className="input-hint">
-              <kbd>Enter</kbd> to send  <kbd>Shift+Enter</kbd> for new line
-            </div>
-
-            <button
-              type="submit"
-              className="ai-send"
-              disabled={!input.trim() || isLoading || isTerminalBusy}
-              title={isTerminalBusy ? "Terminal is busy..." : (isLoading ? "AI is working..." : "Send message")}
-            >
-              {isLoading || isTerminalBusy ? (
-                <FiLoader className="spinning" size={18} />
-              ) : (
-                <>
-                  <FiSend size={16} />
-                  <span>Send</span>
-                </>
-              )}
-            </button>
-            {isLoading && (
-              <button
-                type="button"
-                className="ai-cancel"
-                onClick={handleStopGeneration}
-                title="Cancel generation"
-              >
-                <FiX size={14} />
-                <span>Cancel</span>
-              </button>
-            )}
-          </div>
+          </button>
         </div>
       </form>
     </div>
+  </div>
   );
 });
 

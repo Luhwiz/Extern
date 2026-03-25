@@ -1,9 +1,10 @@
-/* ─── Explorer Container ─── */
 .explorer {
   display: flex;
   flex-direction: column;
   height: 100%;
+  border: none !important;
   user-select: none;
+  background: #f2f2f2;
 }
 
 /* ─── Header ─── */
@@ -176,11 +177,11 @@
 }
 
 .tree-item:hover {
-  background: var(--vscode-hover);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .tree-item:active {
-  background: var(--vscode-active);
+  background: #f0f0f0;
 }
 
 /* Indent guides */

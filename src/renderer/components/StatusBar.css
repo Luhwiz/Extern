@@ -1,7 +1,7 @@
 .status-bar {
   height: 24px;
   background: var(--vscode-statusbar-bg);
-  color: white;
+  color: var(--vscode-fg);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -43,7 +43,7 @@
 }
 
 .status-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--vscode-hover);
 }
 
 .status-theme-toggle {
@@ -52,7 +52,7 @@
 }
 
 .status-theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--vscode-hover);
   transform: scale(1.1);
 }
 

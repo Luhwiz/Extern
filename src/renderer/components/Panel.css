@@ -1,142 +1,105 @@
 .panel {
-  height: 300px;
-  background: var(--vscode-panel-bg);
-  border-top: 1px solid var(--vscode-border);
-  display: flex;
-  flex-direction: column;
+  height: 300px !important;
+  background-color: #f2f2f2 !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  z-index: 10;
 }
 
 .panel-tabs {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--vscode-sidebar-bg);
-  border-bottom: 1px solid var(--vscode-border);
-  padding: 0 10px;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: #f2f2f2 !important;
+  border-bottom: none !important;
+  padding: 0 10px !important;
+  height: 35px !important;
 }
 
 .panel-tab-list {
-  display: flex;
-  gap: 4px;
+  display: flex !important;
+  gap: 4px !important;
 }
 
 .panel-tab {
-  padding: 8px 12px;
-  background: transparent;
-  border: none;
-  color: var(--vscode-fg);
-  cursor: pointer;
-  font-size: 13px;
-  opacity: 0.7;
-  border-bottom: 2px solid transparent;
-  transition: opacity 0.2s;
-}
-
-.panel-tab:hover {
-  opacity: 1;
+  padding: 8px 12px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #3b3b3b !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s !important;
 }
 
 .panel-tab.active {
-  opacity: 1;
-  border-bottom-color: var(--vscode-focus);
+  opacity: 1 !important;
+  border: none !important;
+  font-weight: 600 !important;
 }
 
 .terminal-tabs {
-  display: flex;
-  gap: 4px;
-  align-items: center;
+  display: flex !important;
+  gap: 4px !important;
+  align-items: center !important;
 }
 
 .terminal-tab {
-  padding: 4px 12px;
-  background: transparent;
-  border: none;
-  color: var(--vscode-fg);
-  cursor: pointer;
-  font-size: 12px;
-  opacity: 0.7;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.terminal-tab:hover {
-  opacity: 1;
-  background: var(--vscode-hover);
+  padding: 4px 12px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #3b3b3b !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  opacity: 0.7 !important;
+  border-radius: 3px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 
 .terminal-tab.active {
-  opacity: 1;
-  background: var(--vscode-active);
+  opacity: 1 !important;
+  background-color: #cccccc !important;
 }
 
-.terminal-tab-name {
-  flex: 1;
-}
-
-.terminal-close-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border-radius: 3px;
-  opacity: 0.6;
-  transition: all 0.2s ease;
-}
-
-.terminal-close-button:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
+.terminal-tab:hover {
+  background-color: #d8d8d8 !important;
 }
 
 .new-terminal-button {
-  padding: 2px 8px;
-  background: transparent;
-  border: 1px solid var(--vscode-border);
-  color: var(--vscode-fg);
-  cursor: pointer;
-  font-size: 16px;
-  border-radius: 3px;
-}
-
-.new-terminal-button:hover {
-  background: var(--vscode-hover);
+  padding: 2px 8px !important;
+  background: transparent !important;
+  border: 1px solid #d2d2d2 !important;
+  color: #3b3b3b !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  border-radius: 3px !important;
 }
 
 .panel-content {
-  flex: 1;
-  overflow: hidden;
+  flex: 1 !important;
+  overflow: hidden !important;
+  background-color: #f2f2f2 !important;
 }
 
 .terminals-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
 }
 
 .terminal-instance {
-  width: 100%;
-  height: 100%;
-  padding: 8px;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 10px !important;
+  background-color: #f2f2f2 !important;
 }
 
 .terminal-instance.hidden {
-  display: none;
-}
-
-.empty-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--vscode-fg);
-  opacity: 0.7;
-}
-
-.empty-panel .primary-button {
-  margin-top: 16px;
+  display: none !important;
 }
 
 .terminal-status-dot {
@@ -144,193 +107,12 @@
   height: 8px;
   border-radius: 50%;
   display: inline-block;
-  flex-shrink: 0;
 }
 
-.terminal-status-dot.success {
-  background-color: #4285f4;
-  /* Blue for success (VS Code style) */
-  box-shadow: 0 0 4px rgba(66, 133, 244, 0.5);
-}
+.terminal-status-dot.success { background-color: #4285f4; }
+.terminal-status-dot.error { background-color: #ea4335; }
 
-.terminal-status-dot.error {
-  background-color: #ea4335;
-  /* Red for error */
-  box-shadow: 0 0 4px rgba(234, 67, 53, 0.5);
-}
-
-/* Terminal View Tabs (Explanation / Output) */
-.terminal-view-tabs {
-  display: flex;
-  gap: 0;
-  background: var(--vscode-editor-bg);
-  border-bottom: 1px solid var(--vscode-border);
-  padding: 8px 12px 0 12px;
-}
-
-.terminal-view-tab {
-  padding: 8px 20px;
-  background: transparent;
-  border: none;
-  color: var(--vscode-fg);
-  cursor: pointer;
-  font-size: 13px;
-  opacity: 0.6;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.terminal-view-tab:hover {
-  opacity: 0.9;
-}
-
-.terminal-view-tab.active {
-  opacity: 1;
-  border-bottom-color: #3b82f6;
-  color: #3b82f6;
-}
-
-[data-theme="light"] .terminal-view-tab.active {
-  border-bottom-color: #2563eb;
-  color: #2563eb;
-}
-
-/* Terminal Explanation View */
-.terminal-explanation-view {
-  flex: 1;
-  overflow-y: auto;
-  background: var(--vscode-editor-bg);
-  padding: 20px;
-}
-
-.terminal-explanation-content {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.terminal-explanation-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--vscode-border);
-}
-
-.terminal-explanation-icon {
-  font-size: 24px;
-}
-
-.terminal-explanation-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--vscode-fg);
-}
-
-.terminal-explanation-text {
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--vscode-fg);
-  margin-bottom: 20px;
-  padding: 16px;
-  background: var(--vscode-sidebar-bg);
-  border-radius: 8px;
-  border-left: 3px solid #3b82f6;
-  white-space: pre-line;
-}
-
-.terminal-explanation-link {
-  color: #3b82f6;
-  text-decoration: underline;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.terminal-explanation-link:hover {
-  color: #60a5fa;
-}
-
-.terminal-explanation-tick {
-  color: #22c55e;
-  font-size: 13px;
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-[data-theme="light"] .terminal-explanation-text {
-  background: #f8fafc;
-  border-left-color: #2563eb;
-}
-
-.terminal-explanation-command {
-  font-size: 13px;
-  color: var(--vscode-fg);
-  opacity: 0.8;
-  padding: 12px;
-  background: var(--vscode-input-bg);
-  border-radius: 6px;
-  border: 1px solid var(--vscode-border);
-}
-
-.terminal-explanation-command code {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-  font-size: 12px;
-  color: #3b82f6;
-  background: transparent;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-[data-theme="light"] .terminal-explanation-command code {
-  color: #2563eb;
-}
-
-.terminal-explanation-loading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  background: var(--vscode-editor-bg);
-  color: var(--vscode-fg);
-  opacity: 0.7;
-}
-
-.terminal-explanation-loading .spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--vscode-border);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.terminal-explanation-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--vscode-fg);
-  opacity: 0.5;
-  padding: 40px;
-  text-align: center;
-}
-
-.terminal-explanation-empty .terminal-explanation-icon {
-  font-size: 32px;
-}
-
-.terminal-explanation-empty p {
-  font-size: 14px;
-  margin: 0;
-  line-height: 1.5;
+/* Global theme variables fallback */
+:root {
+  --vscode-panel-bg: #f2f2f2;
 }

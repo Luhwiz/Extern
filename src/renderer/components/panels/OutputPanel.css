@@ -7,7 +7,7 @@
 }
 
 [data-theme="light"] .output-panel {
-  background: #ffffff;
+  background: var(--vscode-bg);
   color: #3b3b3b;
 }
 

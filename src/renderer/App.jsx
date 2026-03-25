@@ -35,8 +35,8 @@ function App() {
   const [explorerRefreshTrigger, setExplorerRefreshTrigger] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [theme, setTheme] = useState(() => {
-    // Load theme from localStorage or default to 'dark'
-    return localStorage.getItem('app_theme') || 'dark';
+    // Load theme from localStorage or default to 'light'
+    return localStorage.getItem('app_theme') || 'light';
   });
 
   // New state for panels
@@ -523,29 +523,31 @@ function App() {
   return (
     <div className="app">
       <div className="workspace">
-        <ActivityBar
-          activeView={activeView}
-          onViewChange={setActiveView}
-          onShowPublishedApps={() => setShowPublishedApps(true)}
-        />
-        {sidebarVisible && (
-          <Sidebar
+        <div className="combined-sidebar-card">
+          <ActivityBar
             activeView={activeView}
-            workspaceFolder={workspaceFolder}
-            onOpenFile={handleOpenFile}
-            onOpenFolder={handleOpenFolder}
-            explorerRefreshTrigger={explorerRefreshTrigger}
-            onExplorerRefresh={() => {
-              if (aiAssistantRef.current && typeof aiAssistantRef.current.syncFiles === 'function') {
-                aiAssistantRef.current.syncFiles();
-              }
-            }}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onLogout={handleLogout}
-            hasAiResponded={hasAiResponded}
+            onViewChange={setActiveView}
+            onShowPublishedApps={() => setShowPublishedApps(true)}
           />
-        )}
+          {sidebarVisible && (
+            <Sidebar
+              activeView={activeView}
+              workspaceFolder={workspaceFolder}
+              onOpenFile={handleOpenFile}
+              onOpenFolder={handleOpenFolder}
+              explorerRefreshTrigger={explorerRefreshTrigger}
+              onExplorerRefresh={() => {
+                if (aiAssistantRef.current && typeof aiAssistantRef.current.syncFiles === 'function') {
+                  aiAssistantRef.current.syncFiles();
+                }
+              }}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onLogout={handleLogout}
+              hasAiResponded={hasAiResponded}
+            />
+          )}
+        </div>
         <div className="main-content">
           <EditorArea
             openFiles={openFiles}

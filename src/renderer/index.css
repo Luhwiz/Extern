@@ -29,8 +29,29 @@ code {
   overflow: hidden;
 }
 
-/* VS Code Theme Colors - Dark Mode (Default) */
+/* VS Code Theme Colors - Greyish/Premium (Default) */
 :root {
+  --vscode-bg: #f2f2f2;
+  --vscode-sidebar-bg: #f2f2f2;
+  --vscode-activitybar-bg: #f2f2f2;
+  --vscode-editor-bg: #f2f2f2;
+  --vscode-panel-bg: #f2f2f2;
+  --vscode-statusbar-bg: #f2f2f2;
+  --vscode-fg: #3b3b3b;
+  --vscode-border: transparent;
+  --vscode-hover: #e8e8e8;
+  --vscode-active: #e0e0e0;
+  --vscode-focus: #000000;
+  --vscode-selection: #add6ff;
+  --bg-primary: #f2f2f2;
+  --bg-secondary: #f2f2f2;
+  --border-color: transparent;
+  --text-primary: #3b3b3b;
+  --text-secondary: #666666;
+}
+
+/* VS Code Theme Colors - Dark Mode (Optional) */
+[data-theme="dark"] {
   --vscode-bg: #1e1e1e;
   --vscode-sidebar-bg: #181818;
   --vscode-activitybar-bg: #333333;
@@ -43,22 +64,6 @@ code {
   --vscode-active: #37373d;
   --vscode-focus: #000000;
   --vscode-selection: #264f78;
-}
-
-/* VS Code Theme Colors - Light Mode */
-[data-theme="light"] {
-  --vscode-bg: #ffffff;
-  --vscode-sidebar-bg: #f3f3f3;
-  --vscode-activitybar-bg: #2c2c2c;
-  --vscode-editor-bg: #ffffff;
-  --vscode-panel-bg: #f8f8f8;
-  --vscode-statusbar-bg: #000000;
-  --vscode-fg: #3b3b3b;
-  --vscode-border: #e5e5e5;
-  --vscode-hover: #e8e8e8;
-  --vscode-active: #e0e0e0;
-  --vscode-focus: #000000;
-  --vscode-selection: #add6ff;
 }
 
 /* Scrollbar Styles */

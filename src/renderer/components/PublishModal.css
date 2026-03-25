@@ -598,8 +598,8 @@
 
 /* ── Light theme overrides ── */
 [data-theme="light"] .pm-modal {
-    background: #ffffff;
-    border-color: rgba(0, 0, 0, 0.1);
+    background: var(--vscode-bg);
+    border-color: var(--vscode-border);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
 }
 
