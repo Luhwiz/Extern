@@ -1,7 +1,7 @@
 {
     "$schema": "https://json.schemastore.org/package.json",
     "name": "externai",
-    "version": "1.1.89",
+    "version": "1.1.90",
     "description": "ExternAI - AI-Powered Development Environment for web, mobile, and game development",
     "main": "src/main/main.js",
     "scripts": {
@@ -102,7 +102,9 @@
                 {
                     "from": "bundled-node/darwin-${arch}",
                     "to": "node",
-                    "filter": ["**/*"]
+                    "filter": [
+                        "**/*"
+                    ]
                 }
             ],
             "target": [
@@ -132,7 +134,9 @@
                 {
                     "from": "bundled-node/win32-${arch}",
                     "to": "node",
-                    "filter": ["**/*"]
+                    "filter": [
+                        "**/*"
+                    ]
                 }
             ],
             "target": [
