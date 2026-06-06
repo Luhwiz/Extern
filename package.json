@@ -71,7 +71,7 @@
         "copyright": "Copyright © 2025 ${author}",
         "publish": {
             "provider": "github",
-            "owner": "Luncedo1234",
+            "owner": "Luhwiz",
             "repo": "Extern",
             "timeout": 600000
         },
