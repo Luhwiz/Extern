@@ -103,10 +103,19 @@ jobs:
           echo "Checking build directory..."
           ls -la build/ || echo "Build directory missing!"
 
-      - name: Download Standalone Node.js
+      - name: Download Standalone Node.js (macOS - both architectures)
+        if: matrix.os == 'macos-latest'
         shell: bash
-        run: npm run download-node --current
-          
+        run: |
+          node scripts/download-node.js darwin-arm64
+          node scripts/download-node.js darwin-x64
+
+      - name: Download Standalone Node.js (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: node scripts/download-node.js win32-x64
+        
+
       - name: Build Electron App (macOS)
         if: matrix.os == 'macos-latest'
         run: npx electron-builder --mac --publish always
