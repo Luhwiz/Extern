@@ -98,6 +98,13 @@
             "category": "public.app-category.developer-tools",
             "artifactName": "${productName}-${arch}.${ext}",
             "icon": "assets/icon.icns",
+            "extraResources": [
+                {
+                    "from": "bundled-node/darwin-${arch}",
+                    "to": "node",
+                    "filter": ["**/*"]
+                }
+            ],
             "target": [
                 {
                     "target": "zip",
@@ -121,6 +128,13 @@
         },
         "win": {
             "icon": "assets/icon.ico",
+            "extraResources": [
+                {
+                    "from": "bundled-node/win32-${arch}",
+                    "to": "node",
+                    "filter": ["**/*"]
+                }
+            ],
             "target": [
                 {
                     "target": "nsis",
@@ -147,7 +161,8 @@
             "createDesktopShortcut": true,
             "createStartMenuShortcut": true,
             "shortcutName": "ExternAI",
-            "artifactName": "${productName}-Setup.${ext}"
+            "artifactName": "${productName}-Setup.${ext}",
+            "include": "assets/installer.nsh"
         }
     }
 }

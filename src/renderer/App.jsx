@@ -13,6 +13,10 @@ import PricingPlans from './components/PricingPlans';
 import NodeJsRequiredModal from './components/NodeJsRequiredModal';
 import PublishModal from './components/PublishModal';
 import PublishedApps from './components/PublishedApps';
+import StudioSidebar from './components/StudioSidebar';
+import SettingsModal from './components/SettingsModal';
+import ReviewSidebar from './components/ReviewSidebar';
+import { FiSidebar } from 'react-icons/fi';
 import './App.css';
 
 function App() {
@@ -34,10 +38,15 @@ function App() {
   const [aiVisible, setAiVisible] = useState(true);
   const [explorerRefreshTrigger, setExplorerRefreshTrigger] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
-  const [theme, setTheme] = useState(() => {
-    // Load theme from localStorage or default to 'light'
-    return localStorage.getItem('app_theme') || 'light';
-  });
+  const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'dark');
+  const [isStudioMode, setIsStudioMode] = useState(true);
+  const [studioSidebarCollapsed, setStudioSidebarCollapsed] = useState(false);
+  const [isReviewSidebarOpen, setIsReviewSidebarOpen] = useState(false);
+  const [sessionPlan, setSessionPlan] = useState('');
+  const [sessionFilesChanged, setSessionFilesChanged] = useState([]);
+  const [sessionBackgroundTasks, setSessionBackgroundTasks] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
+
 
   // New state for panels
   const [outputLogs, setOutputLogs] = useState([]);
@@ -101,15 +110,14 @@ function App() {
     setCurrentUser(null);
   };
 
-  // Apply theme to document
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
     localStorage.setItem('app_theme', theme);
   }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleToggleTerminal = () => {
     const newPanelVisible = !panelVisible;
@@ -260,6 +268,7 @@ function App() {
   // Handler for AI-created files - refreshes explorer without opening
   const handleFileCreatedByAI = async (filePath) => {
     console.log('🔄 [App.jsx] File created by AI, refreshing explorer:', filePath);
+    setSessionFilesChanged(prev => prev.includes(filePath) ? prev : [...prev, filePath]);
 
     // Check if this file is currently open in any tab
     const isOpen = openFiles.some(f => f.id === filePath);
@@ -452,6 +461,7 @@ function App() {
       timestamp: Date.now()
     };
     setTasks(prev => [newTask, ...prev]);
+    setSessionBackgroundTasks(prev => prev.includes(title) ? prev : [...prev, title]);
 
     // Auto-open panel to tasks tab when a new task starts
     if (status === 'in-progress' || status === 'pending') {
@@ -521,13 +531,94 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <div className="workspace">
-        <div className="combined-sidebar-card">
+    <div className={`app ${isStudioMode ? 'studio-mode' : ''}`}>
+      {isStudioMode && (
+        <StudioSidebar 
+          collapsed={studioSidebarCollapsed}
+          onToggle={() => setStudioSidebarCollapsed(!studioSidebarCollapsed)}
+          onOpenFolder={async () => {
+            try {
+              const result = await window.electronAPI.dialog.openFolder();
+              if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+                handleOpenFolder(result.filePaths[0]);
+              }
+            } catch (err) {
+              console.error('Failed to open folder dialog:', err);
+            }
+          }}
+          onChatAssistant={() => { setIsStudioMode(true); setShowIntegrations(false); }}
+          onPublish={() => setShowPublishModal(true)}
+          onAdvancedMode={() => { setIsStudioMode(false); setShowIntegrations(false); }}
+          onImages={() => { setIsStudioMode(false); setActiveView('images'); setShowIntegrations(false); }}
+          onPublishedApps={() => setShowPublishedApps(true)}
+          onIntegrations={() => { setIsStudioMode(true); setShowIntegrations(true); setShowGitHub(false); setShowSupabase(false); }}
+          onDocumentation={() => window.open('https://github.com/Luncedo1234/Extern', '_blank')}
+          onSettings={() => setShowSettings(true)}
+          onUpgrade={() => setShowPricing(true)}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onLogin={() => setIsOfflineMode(false)}
+        />
+      )}
+      
+      <div className={isStudioMode ? "studio-main" : "workspace"}>
+        {/* Preview button - only visible in studio mode */}
+        {isStudioMode && (
+          <div className="studio-preview-bar">
+            {devServerUrl && (
+              <div className="studio-server-pill">
+                <span className="studio-server-dot" />
+                <span className="studio-server-url">{devServerUrl}</span>
+              </div>
+            )}
+            <button
+              className="studio-preview-btn"
+              onClick={() => {
+                if (devServerUrl) {
+                  if (window.electronAPI?.shell?.openExternal) {
+                    window.electronAPI.shell.openExternal(devServerUrl);
+                  } else {
+                    window.open(devServerUrl, '_blank');
+                  }
+                } else {
+                  handlePreviewRequest();
+                }
+              }}
+              title={devServerUrl ? `Open preview: ${devServerUrl}` : 'Run application'}
+            >
+              {devServerUrl ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+              )}
+              {devServerUrl ? 'Preview' : 'Run App'}
+            </button>
+            {!isReviewSidebarOpen && (
+              <button
+                type="button"
+                className="studio-preview-btn"
+                onClick={() => setIsReviewSidebarOpen(true)}
+                title="Show Review Changes"
+                style={{ marginLeft: '8px', padding: '6px', WebkitAppRegion: 'no-drag', cursor: 'pointer' }}
+              >
+                <FiSidebar size={16} />
+              </button>
+            )}
+          </div>
+        )}
+        {/* Hide IDE in studio mode, but keep it mounted for functionality unless Integrations is open */}
+        <div className={`combined-sidebar-card ${isStudioMode ? 'workspace-hidden' : ''}`}>
           <ActivityBar
             activeView={activeView}
             onViewChange={setActiveView}
             onShowPublishedApps={() => setShowPublishedApps(true)}
+            onStudioMode={() => setIsStudioMode(true)}
           />
           {sidebarVisible && (
             <Sidebar
@@ -542,13 +633,12 @@ function App() {
                 }
               }}
               theme={theme}
-              onToggleTheme={toggleTheme}
               onLogout={handleLogout}
               hasAiResponded={hasAiResponded}
             />
           )}
         </div>
-        <div className="main-content">
+        <div className={`main-content ${(isStudioMode && !showIntegrations) ? 'workspace-hidden' : ''}`}>
           <EditorArea
             openFiles={openFiles}
             activeFile={activeFile}
@@ -592,9 +682,16 @@ function App() {
         </div>
         <AIAssistant
           ref={aiAssistantRef}
+          onAIGenerationStart={() => {
+            setStudioSidebarCollapsed(true);
+          }}
+          onPlanGenerated={(plan) => {
+            setSessionPlan(plan);
+            setStudioSidebarCollapsed(true);
+          }}
           onClose={() => setAiVisible(false)}
           onUpgradeClick={() => setShowPricing(true)}
-          visible={aiVisible}
+          visible={aiVisible && (!isStudioMode || !showIntegrations)}
           workspaceFolder={workspaceFolder}
           currentUser={currentUser}
           onOpenFolder={handleOpenFolder}
@@ -609,12 +706,29 @@ function App() {
           devServerUrl={devServerUrl}
         />
       </div>
-      <StatusBar
-        activeFile={openFiles.find((f) => f.id === activeFile)}
-        workspaceFolder={workspaceFolder}
-        cursorPosition={cursorPosition}
-        onUpgradeClick={() => setShowPricing(true)}
-      />
+
+      {isStudioMode && isReviewSidebarOpen && (
+        <ReviewSidebar
+          planContent={sessionPlan}
+          filesChanged={sessionFilesChanged}
+          backgroundTasks={sessionBackgroundTasks}
+          artifacts={[]}
+          onClose={() => setIsReviewSidebarOpen(false)}
+          onFileClick={(filePath) => {
+             // Let's implement opening the file when clicked in the future
+             // For now, it will just be shown in the UI
+          }}
+        />
+      )}
+
+      <div className={isStudioMode ? 'status-bar-hidden' : ''}>
+        <StatusBar
+          activeFile={openFiles.find((f) => f.id === activeFile)}
+          workspaceFolder={workspaceFolder}
+          cursorPosition={cursorPosition}
+          onUpgradeClick={() => setShowPricing(true)}
+        />
+      </div>
       {showPricing && (
         <PricingPlans
           onClose={() => setShowPricing(false)}
@@ -623,6 +737,13 @@ function App() {
       )}
       {showPublishedApps && (
         <PublishedApps onClose={() => setShowPublishedApps(false)} />
+      )}
+      {showSettings && (
+        <SettingsModal 
+          onClose={() => setShowSettings(false)} 
+          theme={theme} 
+          setTheme={setTheme} 
+        />
       )}
       {showPublishModal && (
         <PublishModal

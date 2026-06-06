@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out git repository
@@ -102,10 +102,21 @@ jobs:
         run: |
           echo "Checking build directory..."
           ls -la build/ || echo "Build directory missing!"
+
+      - name: Download Standalone Node.js
+        shell: bash
+        run: npm run download-node --current
           
       - name: Build Electron App (macOS)
         if: matrix.os == 'macos-latest'
         run: npx electron-builder --mac --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Build Electron App (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npx electron-builder --linux --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

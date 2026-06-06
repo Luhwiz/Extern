@@ -449,10 +449,16 @@ async function getTerminalEnv(cwd) {
       try {
         const shell = process.env.SHELL || '/bin/zsh';
         // Get path from interactive login shell (one-time cache)
-        const result = require('child_process').execSync(`${shell} -ilc "echo $PATH"`, { encoding: 'utf8', timeout: 5000 });
-        if (result && result.trim()) {
-          cachedShellPath = result.trim();
-          currentPath = cachedShellPath;
+        const result = require('child_process').execSync(`${shell} -ilc "echo __PATH_START__; echo $PATH; echo __PATH_END__"`, { encoding: 'utf8', timeout: 5000 });
+        if (result) {
+          const match = result.match(/__PATH_START__\s+([\s\S]*?)\s+__PATH_END__/);
+          if (match && match[1]) {
+            cachedShellPath = match[1].trim();
+            currentPath = cachedShellPath;
+          } else if (result.trim()) {
+            cachedShellPath = result.trim().split('\n').pop();
+            currentPath = cachedShellPath;
+          }
         }
       } catch (e) {
         console.warn('[Terminal] Failed to source shell PATH:', e.message);
@@ -464,6 +470,28 @@ async function getTerminalEnv(cwd) {
   const pathParts = currentPath.split(pathSeparator);
   const missingPaths = additionalPaths.filter(p => !pathParts.includes(p));
   let fullPath = [...pathParts, ...missingPaths].filter(Boolean).join(pathSeparator);
+
+  // Add bundled Node.js path
+  const isDev = !app.isPackaged;
+  let bundledNodePath = '';
+  
+  if (isDev) {
+    const platformArch = `${process.platform}-${process.arch}`;
+    bundledNodePath = isWindows
+      ? path.join(app.getAppPath(), 'bundled-node', platformArch)
+      : path.join(app.getAppPath(), 'bundled-node', platformArch, 'bin');
+  } else {
+    bundledNodePath = isWindows
+      ? path.join(process.resourcesPath, 'node')
+      : path.join(process.resourcesPath, 'node', 'bin');
+  }
+  
+  if (require('fs').existsSync(bundledNodePath)) {
+    // Prepend so bundled Node takes absolute priority
+    fullPath = `${bundledNodePath}${pathSeparator}${fullPath}`;
+  } else if (isDev) {
+    console.warn(`[Terminal] Bundled Node not found at ${bundledNodePath}. Run 'npm run download-node --current' to download it.`);
+  }
 
   // Add project local node_modules/.bin
   if (cwd) {
