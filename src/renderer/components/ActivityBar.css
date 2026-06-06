@@ -1,6 +1,6 @@
 .activity-bar {
   width: 64px;
-  background: #f2f2f2;
+  background: var(--vscode-bg);
   display: flex;
   flex-direction: column;
   justify-content: space-between;

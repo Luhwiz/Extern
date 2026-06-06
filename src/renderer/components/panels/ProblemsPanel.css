@@ -2,13 +2,13 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #1e1e1e;
+  background: var(--vscode-fg);
   color: #d4d4d4;
 }
 
 [data-theme="light"] .problems-panel {
   background: var(--vscode-bg);
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }
 
 .problems-toolbar {
@@ -21,7 +21,7 @@
 }
 
 [data-theme="light"] .problems-toolbar {
-  background: #f3f3f3;
+  background: var(--vscode-bg);
   border-bottom-color: #e5e5e5;
 }
 
@@ -54,7 +54,7 @@
 }
 
 .stat-button.active {
-  background: #000000;
+  background: var(--vscode-fg);
   color: #ffffff;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .stat-button.info.active {
-  background: #000000;
+  background: var(--vscode-fg);
 }
 
 .problems-actions {
@@ -90,7 +90,7 @@
 }
 
 .icon-button.active {
-  background: #000000;
+  background: var(--vscode-fg);
 }
 
 .problems-content {
@@ -132,13 +132,13 @@
   align-items: center;
   padding: 4px 8px;
   background: #252526;
-  border-left: 3px solid #000000;
+  border-left: 3px solid var(--vscode-fg);
   margin-bottom: 4px;
   font-size: 12px;
 }
 
 [data-theme="light"] .problem-file-header {
-  background: #f3f3f3;
+  background: var(--vscode-bg);
 }
 
 .file-name {
@@ -147,7 +147,7 @@
 }
 
 [data-theme="light"] .file-name {
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }
 
 .file-count {
@@ -173,7 +173,7 @@
 }
 
 [data-theme="light"] .problem-item:hover {
-  background: #f8f9fa;
+  background: var(--vscode-bg);
 }
 
 .problem-item.error {
@@ -185,7 +185,7 @@
 }
 
 .problem-item.info {
-  border-left-color: #000000;
+  border-left-color: var(--vscode-fg);
 }
 
 .problem-icon {

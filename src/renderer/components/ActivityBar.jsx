@@ -3,14 +3,14 @@ import {
   FiFile, 
   FiSettings,
   FiImage,
-  FiGlobe
+  FiGlobe,
+  FiLayout
 } from 'react-icons/fi';
 import './ActivityBar.css';
 
-function ActivityBar({ activeView, onViewChange, onShowPublishedApps }) {
+function ActivityBar({ activeView, onViewChange, onShowPublishedApps, onStudioMode }) {
   const buttons = [
     { id: 'explorer', icon: FiFile, tooltip: 'Explorer', label: 'Explorer' },
-    { id: 'images', icon: FiImage, tooltip: 'Image Search', label: 'Images' },
   ];
 
   return (
@@ -29,14 +29,16 @@ function ActivityBar({ activeView, onViewChange, onShowPublishedApps }) {
         ))}
       </div>
       <div className="activity-buttons-bottom">
-        <button
-          className="activity-button"
-          onClick={onShowPublishedApps}
-          title="My Published Apps"
-        >
-          <FiGlobe size={22} />
-          <span className="activity-label">Published<br/>Apps</span>
-        </button>
+        {onStudioMode && (
+          <button
+            className="activity-button"
+            onClick={onStudioMode}
+            title="Return to Studio Mode"
+          >
+            <FiLayout size={22} />
+            <span className="activity-label">Studio<br/>Mode</span>
+          </button>
+        )}
         <button
           className="activity-button"
           onClick={() => onViewChange('settings')}

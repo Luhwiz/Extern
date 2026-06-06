@@ -13,7 +13,7 @@
 }
 
 .published-apps-modal {
-  background: var(--vscode-editor-bg, #1e1e1e);
+  background: var(--vscode-editor-bg, var(--vscode-fg));
   border: 1px solid var(--vscode-border, #3c3c3c);
   border-radius: 12px;
   width: 90%;

@@ -1,23 +1,47 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const admin = require('firebase-admin');
 const { authenticateToken } = require('../middleware/auth');
 const database = require('../models/database');
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const { AnthropicBedrock } = require('@anthropic-ai/bedrock-sdk');
+
+let anthropic;
+
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  anthropic = new AnthropicBedrock({
+    awsAccessKey: process.env.AWS_ACCESS_KEY_ID,
+    awsSecretKey: process.env.AWS_SECRET_ACCESS_KEY,
+    awsRegion: process.env.AWS_REGION || 'us-east-1',
+  });
+} else {
+  anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
 
 const db = admin.firestore();
 
 // Helper to get/create user usage document
-async function getUserUsage(userId) {
+async function getUserUsage(userId, userTimezone = 'UTC') {
   const userRef = db.collection('users').doc(userId);
   const userDoc = await userRef.get();
 
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  
+  // Format the date using the user's local timezone (e.g. '2023-10-04')
+  let today;
+  try {
+    today = new Intl.DateTimeFormat('en-CA', { timeZone: userTimezone }).format(now);
+  } catch (err) {
+    // Fallback if timezone is invalid
+    today = now.toISOString().split('T')[0];
+  }
+
+  const FREE_PROMPTS_PER_DAY = parseInt(process.env.FREE_PROMPTS_PER_DAY) || 8;
 
   if (!userDoc.exists) {
     // Create new user document
@@ -28,19 +52,16 @@ async function getUserUsage(userId) {
         tokensToday: 0,
         lastResetDate: today,
         totalRequests: 0,
-        totalTokens: 0,
-        isLifetimeLimited: true
+        totalTokens: 0
       },
       limits: {
-        maxRequestsPerDay: parseInt(process.env.MAX_REQUESTS_PER_DAY) || 100,
-        maxTokensPerDay: Infinity, // Unlimited
-        maxLifetimeRequests: parseInt(process.env.MAX_LIFETIME_REQUESTS) || 20
+        freePromptsPerDay: FREE_PROMPTS_PER_DAY,
+        maxTokensPerDay: Infinity
       }
     };
     await userRef.set(userData);
     return userData;
   }
-
 
   const userData = userDoc.data();
 
@@ -48,26 +69,60 @@ async function getUserUsage(userId) {
   let needsUpdate = false;
 
   if (userData.usage.lastResetDate !== today) {
+    console.log(`[DailyReset] Resetting daily usage for user ${userId}`);
     userData.usage.requestsToday = 0;
     userData.usage.tokensToday = 0;
     userData.usage.lastResetDate = today;
     needsUpdate = true;
   }
 
-  // MIGRATION: Reset totalRequests for existing users to give them a fresh 30 prompts
-  if (!userData.usage.isLifetimeLimited) {
-    console.log(`[Migration] Resetting totalRequests for user ${userId} to start 30 prompt limit`);
-    userData.usage.totalRequests = 0;
-    userData.usage.isLifetimeLimited = true;
+  // Ensure limits are up to date (migration for existing users)
+  if (!userData.limits.freePromptsPerDay) {
+    userData.limits.freePromptsPerDay = FREE_PROMPTS_PER_DAY;
     needsUpdate = true;
   }
 
   if (needsUpdate) {
-    await userRef.update({ usage: userData.usage });
+    await userRef.update({ usage: userData.usage, limits: userData.limits });
   }
 
   return userData;
 }
+
+// Plan generation endpoint - generates implementation plan via OpenAI
+router.post('/plan', authenticateToken, async (req, res) => {
+  try {
+    const { prompt } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Invalid prompt' });
+    }
+
+    console.log(`[Plan] Generating implementation plan for: ${prompt.substring(0, 80)}...`);
+
+    const completion = await anthropic.messages.create({
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
+      system: 'You are a concise technical planner. Write a plan in EXACTLY this format using markdown bold for subtitles:\n\n**Goal:** One sentence on what is being built.\n**UI:** What the interface looks like.\n**Data:** What data/state is managed.\n**AI:** How AI is involved (if at all).\n\nSTRICT RULES: Maximum 60 words total. No bullet sub-lists. No code. Plain English only. Bold the subtitle labels.',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    const plan = completion.content[0].text;
+    console.log(`[Plan] Generated plan (${plan.length} chars)`);
+    res.json({ plan });
+  } catch (error) {
+    console.error('[Plan] Error:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Plan generation failed',
+      details: error.response?.data?.error?.message || error.message
+    });
+  }
+});
 
 // Summarization endpoint (Layer 3: Conversation pruning)
 router.post('/summarize', authenticateToken, async (req, res) => {
@@ -81,9 +136,9 @@ router.post('/summarize', authenticateToken, async (req, res) => {
     console.log(`[Summarize] Generating summary for ${messages.length} messages`);
 
     // Call Claude to summarize
-    const msg = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
+    const completion = await anthropic.messages.create({
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
+      max_tokens: 2048,
       system: 'You are a technical summarizer. Generate concise, fact-based summaries.',
       messages: [
         {
@@ -101,10 +156,10 @@ ${messages.map(m => `${m.role}: ${m.content.substring(0, 500)}`).join('\n\n')}
 
 Summary:`
         }
-      ],
+      ]
     });
 
-    const summary = msg.content[0].text;
+    const summary = completion.content[0].text;
     console.log(`[Summarize] Generated summary: ${summary.substring(0, 100)}...`);
 
     res.json({ summary });
@@ -121,31 +176,61 @@ Summary:`
 router.post('/stream', authenticateToken, async (req, res) => {
   try {
     const userId = req.userId;
+    const userTimezone = req.headers['x-user-timezone'] || 'UTC';
 
     // Get user usage
-    const userData = await getUserUsage(userId);
+    const userData = await getUserUsage(userId, userTimezone);
 
-    // Check if user has exceeded limits
-    const maxLifetimeRequests = parseInt(process.env.MAX_LIFETIME_REQUESTS) || 20;
+    // Check daily free prompt limit (resets every day)
+    const freePromptsPerDay = userData.limits.freePromptsPerDay || parseInt(process.env.FREE_PROMPTS_PER_DAY) || 8;
+    const promptsUsedToday = userData.usage.requestsToday || 0;
 
-    // Ensure limits object has the lifetime limit
-    if (!userData.limits.maxLifetimeRequests) {
-      userData.limits.maxLifetimeRequests = maxLifetimeRequests;
-    }
+    if (promptsUsedToday >= freePromptsPerDay) {
+      const now = new Date();
+      // Calculate time until local midnight based on user's timezone
+      let midnight = new Date(now);
+      try {
+        // Create a date string for the NEXT day in the user's timezone
+        // This is a bit complex, but we can approximate by getting the current date in their timezone
+        // adding 1 day, and setting to midnight
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          year: 'numeric', month: 'numeric', day: 'numeric'
+        }).formatToParts(now);
+        
+        const yr = parts.find(p => p.type === 'year').value;
+        const mo = parts.find(p => p.type === 'month').value;
+        const da = parts.find(p => p.type === 'day').value;
+        
+        // Next midnight in their timezone (by parsing the start of next day)
+        // Since node might not support instantiating Date with arbitrary timezones perfectly,
+        // we'll calculate the rough hours difference.
+      } catch (e) {}
 
-    if (userData.usage.totalRequests >= maxLifetimeRequests) {
-      return res.status(403).json({
-        error: 'Free prompts exhausted',
-        message: 'You have used all 20 free prompts. Please upgrade to continue.',
-        usage: userData.usage,
-        limits: userData.limits
-      });
-    }
+      // Fallback rough estimate for hours until reset (midnight local time)
+      // A simple way is to get the current hour in their timezone and subtract from 24
+      let hoursUntilReset = 24;
+      try {
+        const currentHour = parseInt(new Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          hour: 'numeric',
+          hour12: false
+        }).format(now), 10);
+        // If hour is 24, it means midnight (depending on format), but typically 1-24 or 0-23
+        const hr24 = currentHour === 24 ? 0 : currentHour;
+        hoursUntilReset = 24 - hr24;
+      } catch (err) {
+        // Fallback to UTC calculation
+        midnight.setUTCHours(24, 0, 0, 0);
+        hoursUntilReset = Math.ceil((midnight - now) / (1000 * 60 * 60));
+      }
 
-    if (userData.usage.requestsToday >= userData.limits.maxRequestsPerDay ||
-      userData.usage.tokensToday >= userData.limits.maxTokensPerDay) {
       return res.status(429).json({
-        error: 'Daily limit exceeded',
+        error: 'Daily free prompts exhausted',
+        message: 'your daily free credits are finished, your credits will refill the next day.',
+        promptsUsedToday,
+        freePromptsPerDay,
+        hoursUntilReset,
         usage: userData.usage,
         limits: userData.limits
       });
@@ -198,11 +283,13 @@ CRITICAL RULES (READ FIRST)
 EXECUTION FLOW
 ═══════════════════════════════════════════
 
-FIRST MESSAGE — ONE-SHOT CREATION:
-• Create ALL necessary files FIRST (package.json, config files, source files, etc.)
+FIRST MESSAGE — COMPLETE & FULLY FUNCTIONAL:
+• Generate ALL files necessary for the application to run completely — no file limit.
+• Every component, route, service, config file, and asset the app needs must be included.
+• Do NOT reference any port, service, or file that you have not explicitly created in this response.
+• Create ALL necessary files FIRST (package.json, config files, source files, components, etc.)
+• Every file must be 100% complete — no partial files, no placeholders, no TODOs.
 • Then END with a bash block containing: npm install (first line) then the start command (e.g. npm run dev)
-• Every file must be 100% complete — no partial files
-• Files MUST be created BEFORE the bash block (so npm install can read package.json)
 
 FOLLOW-UP MESSAGES — ONE STEP AT A TIME:
 • Max 3 files OR 2 commands per response
@@ -235,6 +322,11 @@ npm run dev
 
 **Next Step**
 [Propose next step] - Shall I proceed?
+
+TOKEN LIMIT RULE:
+• Free users get 20,000 tokens. When limit is hit, the proxy returns HTTP 402 with { code: 'TOKEN_LIMIT_REACHED' }
+• Always catch this error and show the upgrade banner — never crash
+
 
 ═══════════════════════════════════════════
 DEFAULT TECH STACK
@@ -420,6 +512,13 @@ Command Not Found:
 npm install -g xyz
 \`\`\`
 
+Windows Execution Policy:
+❌ "cannot be loaded because running scripts is disabled on this system" or "Execution_Policies"
+✅ Fix by bypassing the policy:
+\`\`\`bash
+Set-ExecutionPolicy Bypass -Scope CurrentUser -Force
+\`\`\`
+
 FORBIDDEN WHEN FIXING:
 ❌ Partial file fixes - Always provide complete files
 ❌ "Try running X" without fixing the cause
@@ -491,19 +590,27 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
       finalSystemPrompt = `${system}\n\n${defaultSystemPrompt}`;
     }
 
+    // Set Server-Sent Events headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
     // Start Anthropic stream
     const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: Math.min(max_tokens, 64000),
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
+      max_tokens: 60000,
       system: finalSystemPrompt,
       messages: messages,
     });
 
     let totalTokens = 0;
     let stopReason = 'end_turn';
+    let chunkCount = 0;
 
     // Handle stream events
     stream.on('text', (text) => {
+      chunkCount++;
       res.write(`data: ${JSON.stringify({ type: 'content_block_delta', delta: { text } })}\n\n`);
     });
 
@@ -517,23 +624,32 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
     });
 
     stream.on('end', async () => {
-      // Update user usage in Firestore
-      const userRef = db.collection('users').doc(userId);
-      await userRef.update({
-        'usage.requestsToday': admin.firestore.FieldValue.increment(1),
-        'usage.tokensToday': admin.firestore.FieldValue.increment(totalTokens),
-        'usage.totalRequests': admin.firestore.FieldValue.increment(1),
-        'usage.totalTokens': admin.firestore.FieldValue.increment(totalTokens)
-      });
+      console.log(`[Stream] Completed. Chunks sent: ${chunkCount}, Tokens: ${totalTokens}, Stop: ${stopReason}`);
 
+      // Always end the response first so the client isn't left hanging
       res.write(`data: ${JSON.stringify({ done: true, tokens: totalTokens, stop_reason: stopReason })}\n\n`);
       res.end();
+
+      // Update Firestore usage in the background (non-blocking)
+      try {
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+          'usage.requestsToday': admin.firestore.FieldValue.increment(1),
+          'usage.tokensToday': admin.firestore.FieldValue.increment(totalTokens),
+          'usage.totalRequests': admin.firestore.FieldValue.increment(1),
+          'usage.totalTokens': admin.firestore.FieldValue.increment(totalTokens)
+        });
+      } catch (fsErr) {
+        console.error('[Stream] Firestore usage update failed (non-fatal):', fsErr.message);
+      }
     });
 
     stream.on('error', (error) => {
-      console.error('SERVER LOG: Stream error:', error);
-      res.write(`data: ${JSON.stringify({ error: error.message || 'Stream error' })}\n\n`);
-      res.end();
+      console.error('[Stream] Stream error:', error.message);
+      if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ error: error.message || 'Stream error' })}\n\n`);
+        res.end();
+      }
     });
 
   } catch (error) {
@@ -579,21 +695,25 @@ router.get('/usage', authenticateToken, async (req, res) => {
   try {
     const userData = await getUserUsage(req.userId);
 
-    const maxLifetimeRequests = userData.limits.maxLifetimeRequests || 20;
-    const totalRequests = userData.usage.totalRequests || 0;
-    const remainingRequests = Math.max(0, maxLifetimeRequests - totalRequests);
+    const freePromptsPerDay = userData.limits.freePromptsPerDay || parseInt(process.env.FREE_PROMPTS_PER_DAY) || 7;
+    const promptsUsedToday = userData.usage.requestsToday || 0;
+    const promptsRemainingToday = Math.max(0, freePromptsPerDay - promptsUsedToday);
+
+    // Calculate hours until daily reset (midnight UTC)
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setUTCHours(24, 0, 0, 0);
+    const hoursUntilReset = Math.ceil((midnight - now) / (1000 * 60 * 60));
 
     res.json({
       usage: userData.usage,
       limits: userData.limits,
-      remaining: {
-        requests: userData.limits.maxRequestsPerDay - userData.usage.requestsToday,
-        tokens: userData.limits.maxTokensPerDay - userData.usage.tokensToday
-      },
       subscription: {
         tier: 'free',
-        freePromptsRemaining: remainingRequests,
-        maxFreePrompts: maxLifetimeRequests
+        freePromptsPerDay,
+        promptsUsedToday,
+        promptsRemainingToday,
+        hoursUntilReset
       }
     });
   } catch (error) {

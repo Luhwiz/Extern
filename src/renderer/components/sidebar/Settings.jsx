@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiSun, FiMoon, FiLogOut } from 'react-icons/fi';
 import './Settings.css';
 
-function Settings({ theme, onToggleTheme, onLogout }) {
+function Settings({ onLogout }) {
   const [fontSize, setFontSize] = useState(() => {
     return parseInt(localStorage.getItem('editorFontSize')) || 14;
   });
@@ -42,33 +42,6 @@ function Settings({ theme, onToggleTheme, onLogout }) {
         <h2>Settings</h2>
       </div>
       <div className="settings-content">
-        <div className="settings-section">
-          <h3>Appearance</h3>
-          <div className="settings-item">
-            <div className="settings-item-label">
-              <span>Theme</span>
-              <p className="settings-item-description">
-                Choose between light and dark color themes
-              </p>
-            </div>
-            <div className="settings-item-control">
-              <button 
-                className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
-                onClick={() => theme !== 'dark' && onToggleTheme()}
-              >
-                <FiMoon size={18} />
-                <span>Dark</span>
-              </button>
-              <button 
-                className={`theme-option ${theme === 'light' ? 'active' : ''}`}
-                onClick={() => theme !== 'light' && onToggleTheme()}
-              >
-                <FiSun size={18} />
-                <span>Light</span>
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div className="settings-section">
           <h3>Editor</h3>

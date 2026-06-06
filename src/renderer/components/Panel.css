@@ -1,6 +1,6 @@
 .panel {
   height: 300px !important;
-  background-color: #f2f2f2 !important;
+  background-color: var(--vscode-bg) !important;
   border: none !important;
   display: flex !important;
   flex-direction: column !important;
@@ -12,7 +12,7 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  background-color: #f2f2f2 !important;
+  background-color: var(--vscode-bg) !important;
   border-bottom: none !important;
   padding: 0 10px !important;
   height: 35px !important;
@@ -27,7 +27,7 @@
   padding: 8px 12px !important;
   background: transparent !important;
   border: none !important;
-  color: #3b3b3b !important;
+  color: var(--vscode-fg) !important;
   cursor: pointer !important;
   font-size: 13px !important;
   opacity: 0.7 !important;
@@ -50,7 +50,7 @@
   padding: 4px 12px !important;
   background: transparent !important;
   border: none !important;
-  color: #3b3b3b !important;
+  color: var(--vscode-fg) !important;
   cursor: pointer !important;
   font-size: 12px !important;
   opacity: 0.7 !important;
@@ -73,7 +73,7 @@
   padding: 2px 8px !important;
   background: transparent !important;
   border: 1px solid #d2d2d2 !important;
-  color: #3b3b3b !important;
+  color: var(--vscode-fg) !important;
   cursor: pointer !important;
   font-size: 16px !important;
   border-radius: 3px !important;
@@ -82,7 +82,7 @@
 .panel-content {
   flex: 1 !important;
   overflow: hidden !important;
-  background-color: #f2f2f2 !important;
+  background-color: var(--vscode-bg) !important;
 }
 
 .terminals-container {
@@ -95,7 +95,7 @@
   width: 100% !important;
   height: 100% !important;
   padding: 10px !important;
-  background-color: #f2f2f2 !important;
+  background-color: var(--vscode-bg) !important;
 }
 
 .terminal-instance.hidden {
@@ -114,5 +114,5 @@
 
 /* Global theme variables fallback */
 :root {
-  --vscode-panel-bg: #f2f2f2;
+  --vscode-panel-bg: var(--vscode-bg);
 }

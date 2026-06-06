@@ -2,13 +2,13 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #1e1e1e;
+  background: var(--vscode-fg);
   color: #d4d4d4;
 }
 
 [data-theme="light"] .output-panel {
   background: var(--vscode-bg);
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }
 
 .output-toolbar {
@@ -21,7 +21,7 @@
 }
 
 [data-theme="light"] .output-toolbar {
-  background: #f3f3f3;
+  background: var(--vscode-bg);
   border-bottom-color: #e5e5e5;
 }
 
@@ -42,8 +42,8 @@
 }
 
 [data-theme="light"] .channel-select {
-  background: #ffffff;
-  color: #3b3b3b;
+  background: var(--vscode-sidebar-bg);
+  color: var(--vscode-fg);
   border-color: #dadce0;
 }
 
@@ -52,11 +52,11 @@
 }
 
 [data-theme="light"] .channel-select:hover {
-  background: #f8f9fa;
+  background: var(--vscode-bg);
 }
 
 .channel-select:focus {
-  border-color: #000000;
+  border-color: var(--vscode-fg);
 }
 
 .output-actions {
@@ -90,7 +90,7 @@
 }
 
 .icon-button.active {
-  background: #000000;
+  background: var(--vscode-fg);
 }
 
 .output-content {
@@ -148,7 +148,7 @@
 }
 
 [data-theme="light"] .log-message {
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }
 
 .log-error .log-message {
@@ -180,5 +180,5 @@
 }
 
 [data-theme="light"] .log-info .log-message {
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }

@@ -4,7 +4,7 @@
   height: 100%;
   border: none !important;
   user-select: none;
-  background: #f2f2f2;
+  background: var(--vscode-bg);
 }
 
 /* ─── Header ─── */
@@ -181,7 +181,7 @@
 }
 
 .tree-item:active {
-  background: #f0f0f0;
+  background: var(--vscode-bg);
 }
 
 /* Indent guides */
@@ -214,7 +214,7 @@
 }
 
 [data-theme="light"] .tree-item-folder .tree-label {
-  color: #1a1a1a;
+  color: var(--vscode-fg);
 }
 
 [data-theme="light"] .tree-item-file .tree-label {

@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+  background: linear-gradient(135deg, var(--vscode-fg) 0%, #2d2d30 100%);
   z-index: 10000;
 }
 
@@ -141,17 +141,17 @@
 
 .form-group input {
   padding: 12px;
-  background: #1e1e1e;
+  background: var(--vscode-fg);
   border: 1px solid #3c3c3c;
   border-radius: 6px;
-  color: #d4d4d4;
+  color: #000;
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #000000;
+  border-color: var(--vscode-fg);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -167,7 +167,7 @@
 .auth-button {
   margin-top: 8px;
   padding: 12px;
-  background: #000000;
+  background: #1a73e8;
   border: none;
   border-radius: 6px;
   color: #fff;
@@ -178,7 +178,7 @@
 }
 
 .auth-button:hover:not(:disabled) {
-  background: #1a1a1a;
+  background: #1557b0;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -223,7 +223,7 @@
   justify-content: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #ffffff;
+  background: var(--vscode-sidebar-bg);
   color: #3c4043;
   border: 1px solid #dadce0;
   border-radius: 8px;
@@ -234,7 +234,7 @@
 }
 
 .google-sign-in-btn:hover {
-  background: #f7f8f8;
+  background: var(--vscode-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
@@ -291,7 +291,7 @@
 
 /* Light theme overrides */
 [data-theme="light"] .auth-screen {
-  background: linear-gradient(135deg, #f2f2f2 0%, #e5e5e5 100%);
+  background: linear-gradient(135deg, var(--vscode-bg) 0%, #e5e5e5 100%);
 }
 
 [data-theme="light"] .auth-card {
@@ -302,7 +302,7 @@
 
 [data-theme="light"] .auth-info h1,
 [data-theme="light"] .auth-card h2 {
-  color: #1a1a1a;
+  color: var(--vscode-fg);
 }
 
 [data-theme="light"] .auth-description,
@@ -312,9 +312,9 @@
 }
 
 [data-theme="light"] .form-group input {
-  background: #ffffff;
+  background: var(--vscode-sidebar-bg);
   border-color: #d1d5db;
-  color: #1a1a1a;
+  color: var(--vscode-fg);
 }
 
 [data-theme="light"] .auth-divider::before,

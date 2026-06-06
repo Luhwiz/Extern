@@ -14,7 +14,10 @@
   "author": "Sonelise Pakade",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.29.2",
     "@anthropic-ai/sdk": "^0.72.1",
+    "@aws-sdk/client-bedrock-runtime": "^3.1053.0",
+    "@aws-sdk/client-sts": "^3.1053.0",
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -22,7 +25,9 @@
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
     "firebase-admin": "^13.6.0",
-    "helmet": "^7.1.0"
+    "helmet": "^7.1.0",
+    "multer": "^2.1.1",
+    "openai": "^6.41.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

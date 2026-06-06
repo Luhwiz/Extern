@@ -59,13 +59,10 @@ function AuthScreen({ onAuthSuccess }) {
         <div className="auth-content">
           <div className="auth-info">
             <div className="auth-logo-title">
-              <FiCode size={40} color="#1a73e8" style={{ marginBottom: '10px' }} />
               <h1>ExternAI</h1>
             </div>
             <p className="auth-description">
-              ExternAI is a powerful desktop IDE with advanced AI capabilities.
-              Build websites, mobile apps, and games with intelligent code generation, real-time debugging assistance,
-              and an integrated terminal—all powered by cutting-edge AI technology to accelerate your development workflow.
+              Extending human capabilities, by allowing anyone to build custom software applications, and AI solutions for their professional workflows or business operations.
             </p>
           </div>
 

@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
 
 const claudeRoutes = require('./routes/claude');
 const openaiRoutes = require('./routes/openai');
+const generatedAppAiRoutes = require('./routes/generatedAppAi');
 
 const app = express();
 
@@ -14,14 +15,21 @@ const app = express();
 const requiredEnvVars = [
   'FIREBASE_PROJECT_ID',
   'FIREBASE_CLIENT_EMAIL',
-  'FIREBASE_PRIVATE_KEY',
-  'ANTHROPIC_API_KEY'
+  'FIREBASE_PRIVATE_KEY'
 ];
 
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingEnvVars.length > 0) {
   console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
   console.error('Please set these variables in Railway or your .env file');
+  process.exit(1);
+}
+
+const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+const hasBedrock = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+
+if (!hasAnthropic && !hasBedrock) {
+  console.error('❌ Missing AI Provider credentials: set either ANTHROPIC_API_KEY or (AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY)');
   process.exit(1);
 }
 
@@ -82,6 +90,8 @@ app.get('/health', (req, res) => {
 app.use('/api/claude', claudeRoutes);
 app.use('/api/openai', openaiRoutes);
 app.use('/api/payment', require('./routes/payment'));
+// Generated App AI Proxy — powers AI features in every app built with Extern AI
+app.use('/api/generated-app', generatedAppAiRoutes);
 // Note: Publish functionality moved to Firebase Functions
 
 // Error handler

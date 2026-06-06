@@ -156,7 +156,8 @@ async function getClaudeStream(prompt, onChunk, maxTokens = 64000, signal = null
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'x-user-timezone': Intl.DateTimeFormat().resolvedOptions().timeZone
         },
         body: JSON.stringify(body),
         signal: signal // Pass abort signal to fetch
@@ -183,7 +184,13 @@ async function getClaudeStream(prompt, onChunk, maxTokens = 64000, signal = null
       console.error('[ClaudeService] Backend error response:', error);
       const errorMessage = error.error || 'Request failed';
       const details = error.details ? ` (${error.details})` : '';
-      throw new Error(errorMessage + details);
+      const err = new Error(errorMessage + details);
+      // Attach extra info for daily limit errors so the UI can show reset time
+      if (error.hoursUntilReset != null) err.hoursUntilReset = error.hoursUntilReset;
+      if (error.freePromptsPerDay != null) err.freePromptsPerDay = error.freePromptsPerDay;
+      if (error.promptsUsedToday != null) err.promptsUsedToday = error.promptsUsedToday;
+      err.isDailyLimit = !!(error.hoursUntilReset != null || errorMessage.toLowerCase().includes('exhausted'));
+      throw err;
     }
 
     // Read stream with proper buffering
@@ -352,6 +359,34 @@ export default {
       return result.summary;
     } catch (error) {
       console.error('[ClaudeService] Summarization error:', error);
+      throw error;
+    }
+  },
+
+  // Generate an implementation plan (Plan Mode)
+  async generatePlan(prompt) {
+    console.log('[ClaudeService] Generating plan via backend...');
+    try {
+      const token = await getAuthToken();
+      const response = await fetch(`${BACKEND_URL}/api/claude/plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.details || err.error || 'Plan generation failed');
+      }
+
+      const result = await response.json();
+      console.log('[ClaudeService] Plan generated:', result.plan.substring(0, 100) + '...');
+      return result.plan;
+    } catch (error) {
+      console.error('[ClaudeService] Plan error:', error);
       throw error;
     }
   }

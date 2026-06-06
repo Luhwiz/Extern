@@ -4,7 +4,7 @@
   position: absolute;
   inset: 0;
   z-index: 50;
-  background: var(--vscode-editor-bg, #1e1e1e);
+  background: var(--vscode-editor-bg, var(--vscode-fg));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -23,7 +23,7 @@
   top: 16px;
   right: 18px;
   background: transparent;
-  border: 1px solid var(--vscode-border, #333);
+  border: 1px solid var(--vscode-border, var(--vscode-fg));
   color: var(--vscode-fg, #ccc);
   border-radius: 6px;
   width: 28px;
@@ -200,7 +200,7 @@
 
 .itp-back {
   background: transparent;
-  border: 1px solid var(--vscode-border, #333);
+  border: 1px solid var(--vscode-border, var(--vscode-fg));
   color: var(--vscode-fg, #aaa);
   border-radius: 6px;
   padding: 5px 11px;
@@ -384,8 +384,8 @@
 .itp-env-field input {
   width: 100%;
   box-sizing: border-box;
-  background: var(--vscode-bg, #1a1a1a);
-  border: 1px solid var(--vscode-border, #333);
+  background: var(--vscode-bg, var(--vscode-fg));
+  border: 1px solid var(--vscode-border, var(--vscode-fg));
   border-radius: 7px;
   padding: 7px 10px;
   font-size: 12.5px;
@@ -506,7 +506,7 @@
 /* ─── Code area ───────────────────────────────────────────────────────────────── */
 
 .itp-inline-code {
-  background: var(--vscode-bg, #1a1a1a);
+  background: var(--vscode-bg, var(--vscode-fg));
   border: 1px solid var(--vscode-border, #2e2e2e);
   border-radius: 7px;
   padding: 9px 12px;
@@ -547,7 +547,7 @@
 .itp-code-block {
   flex: 1;
   position: relative;
-  background: var(--vscode-bg, #1a1a1a);
+  background: var(--vscode-bg, var(--vscode-fg));
   border: 1px solid var(--vscode-border, #2e2e2e);
   border-radius: 8px;
   overflow: auto;
@@ -646,8 +646,8 @@
 .itp-field-input {
   width: 100%;
   box-sizing: border-box;
-  background: var(--vscode-bg, #1a1a1a);
-  border: 1px solid var(--vscode-border, #333);
+  background: var(--vscode-bg, var(--vscode-fg));
+  border: 1px solid var(--vscode-border, var(--vscode-fg));
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 13px;

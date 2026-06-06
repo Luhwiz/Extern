@@ -222,30 +222,30 @@
 
 /* Light theme overrides */
 [data-theme="light"] .pricing-modal {
-    background: #f2f2f2;
+    background: var(--vscode-bg);
     border-color: #e2e2e2;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light"] .pricing-header h2 {
-    background: linear-gradient(135deg, #111827 0%, #4b5563 100%);
+    background: linear-gradient(135deg, var(--vscode-fg) 0%, var(--vscode-fg) 100%);
     -webkit-background-clip: text;
     background-clip: text;
 }
 
 [data-theme="light"] .pricing-card {
-    background: #ffffff;
+    background: var(--vscode-sidebar-bg);
     border-color: #e5e7eb;
 }
 
 [data-theme="light"] .card-header h3,
 [data-theme="light"] .amount {
-    color: #111827;
+    color: var(--vscode-fg);
 }
 
 [data-theme="light"] .pricing-card:hover {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    background: #ffffff;
+    background: var(--vscode-sidebar-bg);
     border-color: #d1d5db;
 }
 
@@ -256,12 +256,12 @@
 
 [data-theme="light"] .close-pricing:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: #111827;
+    color: var(--vscode-fg);
 }
 
 [data-theme="light"] .features li,
 [data-theme="light"] .pricing-header p,
 [data-theme="light"] .currency,
 [data-theme="light"] .period {
-    color: #4b5563;
+    color: var(--vscode-fg);
 }

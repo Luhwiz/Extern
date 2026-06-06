@@ -23,7 +23,7 @@
 }
 
 .node-warning-modal {
-  background: var(--vscode-editor-background, #1e1e1e);
+  background: var(--vscode-editor-background, var(--vscode-fg));
   border: 1px solid var(--vscode-panel-border, #2d2d30);
   border-radius: 8px;
   width: 90%;

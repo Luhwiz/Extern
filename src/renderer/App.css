@@ -35,3 +35,140 @@
   height: calc(100% - 24px);
   z-index: 10;
 }
+
+/* Studio Mode Styles */
+.app.studio-mode {
+  background: #000000;
+  color: #e3e3e3;
+  flex-direction: row; /* Sidebar left, content right */
+}
+
+[data-theme="light"] .app.studio-mode {
+  background: #f8f9fa;
+  color: #333333;
+}
+
+.studio-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #000000;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .studio-main {
+  background: #f8f9fa;
+}
+
+/* Preview bar pinned to top-right of studio-main */
+.studio-preview-bar {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+.studio-server-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: #a8a8a8;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+[data-theme="light"] .studio-server-pill {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #5f6368;
+}
+
+.studio-server-pill--idle {
+  opacity: 0.6;
+}
+
+.studio-server-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34a853;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px #34a853;
+  animation: serverPulse 2s ease-in-out infinite;
+}
+
+.studio-server-dot--idle {
+  background: #8e918f;
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes serverPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.studio-server-url {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+}
+
+.studio-preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e3e3e3;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.studio-preview-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.studio-preview-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+[data-theme="light"] .studio-preview-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #202124;
+}
+
+[data-theme="light"] .studio-preview-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Hide IDE elements in studio mode */
+.app.studio-mode .workspace-hidden {
+  display: none !important;
+}
+
+.app.studio-mode .status-bar-hidden {
+  display: none !important;
+}

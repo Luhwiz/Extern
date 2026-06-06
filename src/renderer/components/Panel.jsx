@@ -136,11 +136,11 @@ const Panel = forwardRef(({
         fontSize: 12,
         fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace",
         theme: theme === 'light' ? {
-          background: '#f2f2f2',
-          foreground: '#3b3b3b',
-          cursor: '#3b3b3b',
+          background: 'var(--vscode-bg)',
+          foreground: 'var(--vscode-fg)',
+          cursor: 'var(--vscode-fg)',
           selection: '#add6ff',
-          black: '#000000',
+          black: 'var(--vscode-fg)',
           red: '#c5221f',
           green: '#1e8e3e',
           yellow: '#f57c00',
@@ -155,9 +155,9 @@ const Panel = forwardRef(({
           brightBlue: '#4285f4',
           brightMagenta: '#c678dd',
           brightCyan: '#00bcd4',
-          brightWhite: '#3b3b3b',
+          brightWhite: 'var(--vscode-fg)',
         } : {
-          background: '#1e1e1e',
+          background: 'var(--vscode-fg)',
           foreground: '#cccccc',
           cursor: '#ffffff',
           selection: '#264f78',
@@ -309,7 +309,8 @@ const Panel = forwardRef(({
             // Detect command completion status for terminal tab indicators
             if (onUpdateTerminalStatus) {
               // Check for common error patterns
-              const hasError = /error|Error|ERROR|failed|Failed|FAILED|npm ERR!|ENOENT|EACCES/.test(data)
+              // Check for explicit and severe shell/command errors
+              const hasError = /npm ERR!|ENOENT|EACCES|EADDRINUSE/.test(data)
                 || (/command not found/.test(data) && !/command not found: #/.test(data)); // Ignore harmless comment artifacts
               const hasSuccess = /✓|success|Success|SUCCESS|Done|done|Compiled successfully|webpack compiled|Ready in|Server running|added \d+ packages|packages in \d|updated \d+ packages|audited \d+ packages|found \d+ vulnerabilities|successfully|installed|complete|finished/.test(data)
                 || /[$%#]\s*$/.test(data.trimEnd()); // Shell prompt returned = command finished
@@ -371,20 +372,20 @@ const Panel = forwardRef(({
   }, [visible]);
 
   return (
-    <div className="panel" style={{ height: '300px', backgroundColor: '#f2f2f2', borderTop: 'none', display: 'flex', flexDirection: 'column' }}>
-      <div className="panel-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f2f2f2', borderBottom: 'none', padding: '0 10px', height: '35px' }}>
+    <div className="panel" style={{ height: '300px', backgroundColor: 'var(--vscode-bg)', borderTop: 'none', display: 'flex', flexDirection: 'column' }}>
+      <div className="panel-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--vscode-bg)', borderBottom: 'none', padding: '0 10px', height: '35px' }}>
         <div className="panel-tab-list" style={{ display: 'flex', gap: '4px' }}>
           <button
             className={`panel-tab ${activeTab === 'terminal' ? 'active' : ''}`}
             onClick={() => setActiveTab('terminal')}
-            style={{ padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', color: activeTab === 'terminal' ? '#000000' : '#6b7280', fontWeight: activeTab === 'terminal' ? '700' : '500' }}
+            style={{ padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', color: activeTab === 'terminal' ? 'var(--vscode-fg)' : '#6b7280', fontWeight: activeTab === 'terminal' ? '700' : '500' }}
           >
             Terminal
           </button>
         </div>
         {/* Terminal tabs and new button removed as requested */}
       </div>
-      <div className="panel-content" style={{ flex: 1, overflow: 'hidden', backgroundColor: '#f2f2f2' }}>
+      <div className="panel-content" style={{ flex: 1, overflow: 'hidden', backgroundColor: 'var(--vscode-bg)' }}>
         {activeTab === 'terminal' && terminals.length > 0 && (
           <>
             {/* Terminal output view */}
@@ -394,7 +395,7 @@ const Panel = forwardRef(({
                   key={terminal.id}
                   ref={(el) => (terminalRefsMap.current[terminal.id] = el)}
                   className={`terminal-instance ${activeTerminal === terminal.id ? 'active' : 'hidden'}`}
-                  style={{ width: '100%', height: '100%', padding: '10px', backgroundColor: '#f2f2f2', display: activeTerminal === terminal.id ? 'block' : 'none' }}
+                  style={{ width: '100%', height: '100%', padding: '10px', backgroundColor: 'var(--vscode-bg)', display: activeTerminal === terminal.id ? 'block' : 'none' }}
                   data-terminal-id={backendTerminalIds.current[terminal.id] || ''}
                   data-id={terminal.id}
                 />

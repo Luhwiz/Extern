@@ -2,13 +2,13 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #1e1e1e;
+  background: var(--vscode-fg);
   color: #d4d4d4;
 }
 
 [data-theme="light"] .debug-console {
   background: var(--vscode-bg);
-  color: #3b3b3b;
+  color: var(--vscode-fg);
 }
 
 .debug-toolbar {
@@ -21,7 +21,7 @@
 }
 
 [data-theme="light"] .debug-toolbar {
-  background: #f3f3f3;
+  background: var(--vscode-bg);
   border-bottom-color: #e5e5e5;
 }
 
@@ -105,7 +105,7 @@
 }
 
 [data-theme="light"] .debug-examples code {
-  background: #f3f3f3;
+  background: var(--vscode-bg);
   color: #d73a49;
 }
 
@@ -186,8 +186,8 @@
 }
 
 .debug-input:focus {
-  border-color: #000000;
-  background: #1e1e1e;
+  border-color: var(--vscode-fg);
+  background: var(--vscode-fg);
 }
 
 .debug-input::placeholder {

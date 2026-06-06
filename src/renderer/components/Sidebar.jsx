@@ -9,7 +9,7 @@ import Settings from './sidebar/Settings';
 import AnalyticsService from '../services/AnalyticsService';
 import './Sidebar.css';
 
-function Sidebar({ activeView, workspaceFolder, onOpenFile, onOpenFolder, explorerRefreshTrigger, onExplorerRefresh, theme, onToggleTheme, onLogout, hasAiResponded }) {
+function Sidebar({ activeView, workspaceFolder, onOpenFile, onOpenFolder, explorerRefreshTrigger, onExplorerRefresh, onLogout, hasAiResponded }) {
   const renderView = () => {
     // Track sidebar view changes
     if (activeView) {
@@ -39,7 +39,7 @@ function Sidebar({ activeView, workspaceFolder, onOpenFile, onOpenFolder, explor
       case 'extensions':
         return <div className="sidebar-content">Extensions</div>;
       case 'settings':
-        return <Settings theme={theme} onToggleTheme={onToggleTheme} onLogout={onLogout} />;
+        return <Settings onLogout={onLogout} />;
       default:
         return null;
     }

@@ -1,6 +1,6 @@
 .sidebar {
   width: 240px; /* Adjusting width for combined card */
-  background: #f2f2f2 !important;
+  background: var(--vscode-bg) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;

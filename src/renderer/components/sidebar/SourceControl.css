@@ -247,22 +247,22 @@
 
 .change-status.modified {
   background: #e2c08d;
-  color: #000;
+  color: var(--vscode-fg);
 }
 
 .change-status.added {
   background: #89d185;
-  color: #000;
+  color: var(--vscode-fg);
 }
 
 .change-status.deleted {
   background: #f48771;
-  color: #000;
+  color: var(--vscode-fg);
 }
 
 .change-status.untracked {
   background: #73c991;
-  color: #000;
+  color: var(--vscode-fg);
 }
 
 .change-file {

@@ -146,7 +146,7 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
       inherit: true,
       rules: [],
       colors: {
-        'editor.background': '#f2f2f2',
+        'editor.background': 'var(--vscode-bg)',
       }
     });
 
@@ -291,7 +291,7 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
         {showIntegrations && (
           <IntegrationsPanel workspaceFolder={workspaceFolder} onClose={onIntegrationsToggle} onSendToAI={onSendToAI} />
         )}
-        {openFiles.length > 0 ? (
+        {!showGitHub && !showSupabase && !showIntegrations && openFiles.length > 0 ? (
           <div className="editor-pane" style={{ display: activeFile ? 'flex' : 'none' }}>
             {currentFile && (
               <div className="editor-split-view">
@@ -323,6 +323,8 @@ function EditorArea({ openFiles, activeFile, onFileSelect, onFileClose, onConten
                         minimap: { enabled: true },
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
+                        stickyScroll: { enabled: false },
+                        breadcrumbs: { enabled: false },
                         tabSize: tabSize,
                         insertSpaces: true,
                         wordWrap: 'on',

@@ -56,48 +56,7 @@ const PricingPlans = ({ onClose, userEmail }) => {
     ];
 
     const handleBuy = async (plan) => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payment/initiate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await window.electronAPI.auth.getToken()}`
-                },
-                body: JSON.stringify({
-                    planId: plan.id,
-                    amount: plan.price,
-                    itemName: `ExternAI ${plan.name} Plan`
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.url && result.data) {
-                // Create a hidden form and submit it to open the browser
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = result.url;
-                form.target = '_blank';
-
-                Object.keys(result.data).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = result.data[key];
-                    form.appendChild(input);
-                });
-
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-            }
-        } catch (error) {
-            console.error('Payment failed:', error);
-            alert('Failed to initiate payment. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        alert(`Subscriptions are currently in development. We are not accepting payments for the ${plan.name} plan at this time. Check back later!`);
     };
 
     return (

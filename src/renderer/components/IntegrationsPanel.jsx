@@ -14,7 +14,7 @@ const StripeLogo = () => (
 
 const VercelLogo = () => (
   <svg viewBox="0 0 40 40" width="36" height="36" fill="none">
-    <rect width="40" height="40" rx="10" fill="#000"/>
+    <rect width="40" height="40" rx="10" fill="var(--vscode-fg)"/>
     <path d="M20 8L34 32H6L20 8Z" fill="white"/>
   </svg>
 );
@@ -38,7 +38,7 @@ const FirebaseLogo = () => (
 
 const ResendLogo = () => (
   <svg viewBox="0 0 40 40" width="36" height="36" fill="none">
-    <rect width="40" height="40" rx="10" fill="#000"/>
+    <rect width="40" height="40" rx="10" fill="var(--vscode-fg)"/>
     <path d="M10 28V12h10a8 8 0 0 1 0 16h-4l5 0" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
     <circle cx="28" cy="28" r="3" fill="#ff4444"/>
   </svg>
@@ -181,7 +181,7 @@ export async function checkout(priceId) {
     tagline: 'Deploy your site in seconds',
     description: 'Put your app online for free in about 60 seconds. Connect it to GitHub and your site updates automatically every time you make a change — no manual uploading ever again.',
     category: 'Deploy',
-    color: '#000000',
+    color: 'var(--vscode-fg)',
     bg: 'rgba(255,255,255,0.07)',
     hot: true,
     Logo: VercelLogo,

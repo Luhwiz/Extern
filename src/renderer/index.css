@@ -29,41 +29,45 @@ code {
   overflow: hidden;
 }
 
-/* VS Code Theme Colors - Greyish/Premium (Default) */
+/* VS Code Theme Colors - Premium Dark Slate */
 :root {
-  --vscode-bg: #f2f2f2;
-  --vscode-sidebar-bg: #f2f2f2;
-  --vscode-activitybar-bg: #f2f2f2;
-  --vscode-editor-bg: #f2f2f2;
-  --vscode-panel-bg: #f2f2f2;
-  --vscode-statusbar-bg: #f2f2f2;
-  --vscode-fg: #3b3b3b;
-  --vscode-border: transparent;
-  --vscode-hover: #e8e8e8;
-  --vscode-active: #e0e0e0;
-  --vscode-focus: #000000;
-  --vscode-selection: #add6ff;
-  --bg-primary: #f2f2f2;
-  --bg-secondary: #f2f2f2;
-  --border-color: transparent;
-  --text-primary: #3b3b3b;
-  --text-secondary: #666666;
+  --vscode-bg: #0d0f12;
+  --vscode-sidebar-bg: #0a0b0d;
+  --vscode-activitybar-bg: #08090b;
+  --vscode-editor-bg: #0d0f12;
+  --vscode-panel-bg: #0a0b0d;
+  --vscode-statusbar-bg: #060708;
+  --vscode-fg: #e2e8f0;
+  --vscode-border: rgba(255, 255, 255, 0.07);
+  --vscode-hover: rgba(255, 255, 255, 0.08);
+  --vscode-active: rgba(255, 255, 255, 0.12);
+  --vscode-focus: #4f46e5;
+  --vscode-selection: rgba(79, 70, 229, 0.3);
+  --bg-primary: #0d0f12;
+  --bg-secondary: #0a0b0d;
+  --border-color: rgba(255, 255, 255, 0.07);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
 }
 
-/* VS Code Theme Colors - Dark Mode (Optional) */
-[data-theme="dark"] {
-  --vscode-bg: #1e1e1e;
-  --vscode-sidebar-bg: #181818;
-  --vscode-activitybar-bg: #333333;
-  --vscode-editor-bg: #1e1e1e;
-  --vscode-panel-bg: #1e1e1e;
-  --vscode-statusbar-bg: #000000;
-  --vscode-fg: #cccccc;
-  --vscode-border: #454545;
-  --vscode-hover: #2a2d2e;
-  --vscode-active: #37373d;
-  --vscode-focus: #000000;
-  --vscode-selection: #264f78;
+[data-theme="light"] {
+  --vscode-bg: #ffffff;
+  --vscode-sidebar-bg: #f8f9fa;
+  --vscode-activitybar-bg: #f1f3f4;
+  --vscode-editor-bg: #ffffff;
+  --vscode-panel-bg: #f8f9fa;
+  --vscode-statusbar-bg: #007acc;
+  --vscode-fg: #333333;
+  --vscode-border: rgba(0, 0, 0, 0.1);
+  --vscode-hover: rgba(0, 0, 0, 0.05);
+  --vscode-active: rgba(0, 0, 0, 0.1);
+  --vscode-focus: #007acc;
+  --vscode-selection: rgba(0, 122, 204, 0.3);
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --text-primary: #333333;
+  --text-secondary: #5f6368;
 }
 
 /* Scrollbar Styles */
@@ -77,24 +81,12 @@ code {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #424242;
+  background: #333d4a;
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4e4e4e;
-}
-
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #c0c0c0;
-}
-
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: #a0a0a0;
-}
-
-[data-theme="light"] ::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: #465365;
 }
 
 /* Selection */
