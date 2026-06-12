@@ -123,7 +123,7 @@ async function getClaudeCompletion(prompt, maxTokens = 64000, timeout = 60000) {
   }
 }
 
-async function getClaudeStream(prompt, onChunk, maxTokens = 64000, signal = null, systemPrompt = null, projectState = null, conversationSummary = null) {
+async function getClaudeStream(prompt, onChunk, maxTokens = 60000, signal = null, systemPrompt = null, projectState = null, conversationSummary = null) {
   console.log('[ClaudeService] Starting Claude stream via backend...');
   console.log('[ClaudeService] Backend URL:', BACKEND_URL);
 

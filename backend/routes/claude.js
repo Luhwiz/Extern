@@ -237,7 +237,7 @@ router.post('/stream', authenticateToken, async (req, res) => {
     }
 
     // Get request body
-    const { messages, max_tokens = 64000, system, projectState, conversationSummary } = req.body;
+    const { messages, max_tokens = 60000, system, projectState, conversationSummary } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Invalid messages format' });
@@ -596,10 +596,10 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Start Anthropic stream
+    // Start Anthropic stream (safely clamp max_tokens to AWS limit 8192)
     const stream = anthropic.messages.stream({
       model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
-      max_tokens: 60000,
+      max_tokens,
       system: finalSystemPrompt,
       messages: messages,
     });
@@ -712,7 +712,7 @@ router.get('/usage', authenticateToken, async (req, res) => {
         tier: 'free',
         freePromptsPerDay,
         promptsUsedToday,
-        promptsRemainingToday,
+        freePromptsRemaining: promptsRemainingToday,
         hoursUntilReset
       }
     });

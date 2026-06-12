@@ -505,6 +505,8 @@ async function getTerminalEnv(cwd) {
   return terminalEnv;
 }
 
+// Removed ensurePnpm() since we are using npm.
+
 // Terminal Operations
 ipcMain.handle('terminal:create', async (event, cwd) => {
   if (!pty) {
@@ -1061,39 +1063,54 @@ ipcMain.handle('workspace:listFiles', async (event, dirPath) => {
 });
 
 // Execute terminal command and return output
+// Uses spawn (not exec) to avoid the 10MB buffer cap that stalls long-running installs.
+// Timeout reduced to 10 minutes; process is hard-killed (SIGKILL) if it hangs.
 ipcMain.handle('terminal:execute', async (event, { command, cwd }) => {
   try {
-    const { exec } = require('child_process');
+    const { spawn } = require('child_process');
     const terminalEnv = await getTerminalEnv(cwd);
+    const timeout = 10 * 60 * 1000; // 10 minutes
 
-    // 25 minute timeout for all commands
-    const timeout = 25 * 60 * 1000;
-
-    console.log(`[Terminal] Executing command with full environment: ${command}`);
+    console.log(`[Terminal] Executing: ${command}`);
 
     return new Promise((resolve) => {
-      exec(command, {
-        cwd,
-        timeout,
+      const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/bash';
+      const args = process.platform === 'win32' ? ['/c', command] : ['-c', command];
+
+      let stdout = '';
+      let stderr = '';
+      let settled = false;
+
+      const proc = spawn(shell, args, {
+        cwd: cwd || process.cwd(),
         env: terminalEnv,
-        maxBuffer: 10 * 1024 * 1024
-      }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`[Terminal] Command failed: ${error.message}`);
-          resolve({
-            success: false,
-            error: error.message,
-            stderr: stderr,
-            stdout: stdout
-          });
-        } else {
-          console.log(`[Terminal] Command succeeded`);
-          resolve({
-            success: true,
-            stdout: stdout,
-            stderr: stderr
-          });
-        }
+      });
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        proc.kill('SIGKILL');
+        console.warn(`[Terminal] Command timed out after 10 minutes: ${command}`);
+        resolve({ success: false, error: 'Command timed out after 10 minutes', stdout, stderr });
+      }, timeout);
+
+      proc.stdout.on('data', (data) => { stdout += data.toString(); });
+      proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      proc.on('close', (code) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        console.log(`[Terminal] Command exited with code ${code}`);
+        resolve({ success: code === 0, stdout, stderr });
+      });
+
+      proc.on('error', (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        console.error(`[Terminal] Spawn error: ${error.message}`);
+        resolve({ success: false, error: error.message, stdout, stderr });
       });
     });
   } catch (err) {
@@ -1429,6 +1446,7 @@ ipcMain.handle('openai:explain', async (event, { filePath, content, language }) 
 app.whenReady().then(() => {
   require('./ClaudeProxy');
   createWindow();
+  // ensurePnpm(); // Non-blocking — sets up pnpm in background
 
   if (!app.isPackaged) {
     console.log('📦 Development mode - skipping auto-update check');

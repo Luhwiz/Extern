@@ -124,10 +124,9 @@ When suggesting terminal commands:
 - Examples that will auto-execute:
   \`\`\`bash
   npm install express react axios
-  \`\`\`
   
-  \`\`\`bash
-  npm start
+  And command execution blocks:
+  npm run dev
   \`\`\`
   
 - Provide commands for:
@@ -187,14 +186,14 @@ Typical workflow example (METHODICAL APPROACH):
 1. User: "Create a React app with a contact form"
 2. Step 1: You generate package.json ONLY
 3. Wait for confirmation it was created successfully
-4. Step 2: You provide: \`\`\`bash\\nnpm install\\n\`\`\`
+4. Step 2: You provide: \`\`\`bash\nnpm install\n\`\`\`
 5. Wait for command to complete - check for errors
 6. If errors: Fix them before proceeding
 7. Step 3: Create index.html
 8. Wait for confirmation
 9. Step 4: Create React components (one file at a time)
 10. Verify each file is created successfully
-11. Step 5: Provide: \`\`\`bash\\nnpm start\\n\`\`\`
+11. Step 5: Provide: \`\`\`bash\nnpm run dev\n\`\`\`
 12. Wait for server to start - check for errors
 13. If errors: Debug and fix before continuing
 

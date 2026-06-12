@@ -4,6 +4,7 @@ import { SiJavascript, SiReact, SiHtml5, SiCss3, SiJson, SiMarkdown, SiPython, S
 import ClaudeService from '../services/ClaudeService';
 import AnalyticsService from '../services/AnalyticsService';
 import ProjectStateService from '../services/ProjectStateService';
+import AiFeatureTemplates from '../templates/AiFeatureTemplate';
 import './AIAssistant.css';
 
 // Debug flag - set to false to disable verbose logging in production
@@ -167,6 +168,79 @@ const sanitizeTextContent = (text) => {
 // Constants for timing
 const TYPING_DELAY_MIN = 10; // ms - faster response speed
 const TYPING_DELAY_MAX = 30; // ms - faster response speed
+
+// Component to simulate command execution progress
+const CommandProgress = ({ isExecuting }) => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isExecuting) {
+      setProgress(100);
+      return;
+    }
+    
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p < 80) return p + (Math.random() * 5);
+        if (p < 95) return p + (Math.random() * 2);
+        if (p < 99) return p + 0.1;
+        return p;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isExecuting]);
+
+  if (!isExecuting && progress === 100) return null;
+
+  return (
+    <div className="command-progress-container" style={{ marginTop: '8px', width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '100%', background: 'rgba(255,255,255,0.1)', height: '4px', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.min(99.9, progress)}%`, height: '100%', background: '#4d9eff', transition: 'width 0.5s ease-out' }} />
+      </div>
+      <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', textAlign: 'right' }}>
+        {Math.floor(Math.min(99, progress))}%
+      </div>
+    </div>
+  );
+};
+
+const AILoadingProgress = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p < 50) return p + (Math.random() * 8);
+        if (p < 85) return p + (Math.random() * 3);
+        if (p < 99) return p + 0.2;
+        return p;
+      });
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="message assistant" style={{ background: 'transparent', padding: '16px 0', borderBottom: 'none' }}>
+      <div className="message-header">
+        <span className="sender-name">ExternAI</span>
+      </div>
+      <div className="message-content">
+        <div style={{ color: '#888', marginBottom: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FiLoader className="spinning" size={12} /> Thinking...
+        </div>
+        <div style={{ width: '100%', background: 'rgba(255,255,255,0.05)', height: '4px', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ width: `${Math.min(99.9, progress)}%`, height: '100%', background: '#4d9eff', transition: 'width 0.4s ease-out' }} />
+        </div>
+        <div style={{ fontSize: '10px', color: '#888', marginTop: '4px', textAlign: 'right' }}>
+          {Math.floor(Math.min(99, progress))}%
+        </div>
+      </div>
+    </div>
+  );
+};
 const COMMAND_EXECUTION_DELAY = 1000; // ms between commands
 const WORKSPACE_SCAN_DELAY = 500; // ms before scanning workspace
 const STREAM_BUFFER_CHECK_DELAY = 50; // ms when waiting for content
@@ -191,23 +265,23 @@ If a user asks for any of these, IMMEDIATELY respond with:
 "I'm sorry, but I cannot help build code editors, IDEs, or AI coding assistants as it violates our content policy. I can, however, help you build web applications, mobile apps, games, and other software."
 
 ═══════════════════════════════════════════
-⚡ PHASE 1 ONLY — STRICT RESTRICTIONS ⚡
+⚡ PHASE 1 — FULL STACK FROM DAY ONE ⚡
 ═══════════════════════════════════════════
 
-This is the FIRST response. You MUST follow these restrictions EXACTLY:
+This is the FIRST response. Build the COMPLETE full-stack app immediately:
 
-❌ DO NOT install or import Firebase (no firebase, firebase/app, firestore, firebase-admin)
-❌ DO NOT create any Firebase service files (firebaseConfig.js, firebase.js, etc.)
-❌ DO NOT add any AI service files or AI chat features
-❌ DO NOT install or reference any AI SDKs (openai, anthropic, langchain, etc.)
-❌ DO NOT add any backend server files (server.js, express routes, etc.)
-❌ DO NOT run 'npm install firebase' or any AI/backend package installs
+✅ DO install and configure Firebase (firebase, firebase/app, firebase/firestore, firebase/storage) — it is REQUIRED in every first response.
+✅ DO create src/firebase.js using the FIREBASE_INIT_TEMPLATE provided below.
+✅ DO include the built-in AI features immediately using the AI proxy API templates provided. DO NOT install openai, anthropic, or langchain.
+✅ ONLY use the provided AI_SERVICE_TEMPLATE. Do NOT write your own fetch to OpenAI directly.
+✅ All AI chat history MUST be saved to Firestore using the template as shown.
+✅ Use only standard front-end packages (React, Vite, Tailwind CSS, Firebase).
 
-✅ ONLY build the core UI and front-end functionality the user asked for.
-✅ Use only standard front-end packages: React, Vite, Tailwind CSS, and lightweight UI libraries.
-✅ Keep the npm install command to ONLY what the core app needs (vite, react, tailwind, etc.).
+❌ DO NOT run 'npm install openai' or any other AI SDK.
+❌ DO NOT create any backend server files (server.js, express routes, etc.).
+❌ DO NOT write your own fetch calls to api.openai.com — use the provided AI proxy template.
 
-The AI features and Firebase integration will be added LATER in a separate step. Focus entirely on making a beautiful, functional core app first.
+The .env file MUST include the Extern AI Firebase credentials and AI function URL exactly as shown in the ENV_TEMPLATE.
 
 ═══════════════════════════════════════════
 STRICT RULES for ONE-SHOT PROJECT CREATION
@@ -220,7 +294,8 @@ STRICT RULES for ONE-SHOT PROJECT CREATION
    - Example: "This configures Tailwind CSS:"
    - NEVER place two code blocks back-to-back with no text between them.
 4. AUTOMATIC SETUP & START (BASH BLOCK): ALWAYS include a bash code block at the END of your response with the EXACT setup commands:
-   - Install ONLY the core dependencies the app needs: npm install
+   - YOU MUST generate a complete package.json file containing ALL dependencies (including firebase, react, vite, etc.)
+   - Run a single command to install everything: npm install
    - Start the application so the user sees it instantly: npm run dev (or npm start)
    - NO 'cd' commands or absolute paths — you are already in the project root
    - List commands sequentially, one per line in the bash block
@@ -249,7 +324,29 @@ STRICT RULES for ONE-SHOT PROJECT CREATION
    - Images must use max-w-full and responsive sizing. Text must be readable without zooming.
 7. EFFICIENCY: Deliver complete, runnable code immediately.
 
-Ensure your code blocks are correctly formatted with file paths (e.g., \`\`\`javascript:path/to/file.js\`\`\`) and your terminal commands are in a separate bash block.`;
+═══════════════════════════════════════════
+🔥 FIREBASE + 🤖 AI AGENT INTEGRATION — MANDATORY 🔥
+═══════════════════════════════════════════
+
+Every generated application MUST have Firebase AND a fully working AI agent built-in from the FIRST response.
+YOU MUST USE THE FOLLOWING EXACT TEMPLATES. DO NOT INSTALL OPENAI OR LANGCHAIN. DO NOT SKIP FIREBASE.
+
+Template 0 (src/firebase.js) — REQUIRED IN EVERY APP:
+${AiFeatureTemplates.FIREBASE_INIT_TEMPLATE}
+
+Template 1 (src/services/aiService.js):
+${AiFeatureTemplates.AI_SERVICE_TEMPLATE}
+
+Template 2 (src/components/AiChat.jsx):
+${AiFeatureTemplates.AI_CHAT_COMPONENT_TEMPLATE}
+
+Template 3 (src/components/AiDocSearch.jsx):
+${AiFeatureTemplates.AI_DOC_SEARCH_TEMPLATE}
+
+Template 4 (.env) — use EXACTLY as shown, do not change the Firebase credentials:
+${AiFeatureTemplates.ENV_TEMPLATE}
+
+Modify the app UI (e.g. App.jsx) to import and include the AiChat and AiDocSearch components where appropriate so the user can interact with the AI immediately.`;
 
 
 const FOLLOW_UP_SYSTEM_PROMPT = `You are ExternAI, an expert software developer iterating on an existing project.
@@ -294,11 +391,29 @@ STRICT RULES for FOLLOW-UP ITERATIONS
    - Touch targets minimum 44×44px. Navigation must work on 375px screens.
    - If adding new sections or components, ensure they stack properly on mobile.
 7. NO DIRECTORY NAVIGATION: Do not use 'cd' or absolute paths.
-7. BRIEF SENTENCE BEFORE EACH FILE — MANDATORY: Write exactly 1 short sentence before every code block.
+8. BRIEF SENTENCE BEFORE EACH FILE — MANDATORY: Write exactly 1 short sentence before every code block.
    - Example: "Updating the navbar to add your new menu item:"
    - NEVER place two code blocks back-to-back with no text between them.
 
-Format code blocks as \`\`\`javascript:path/to/file.js\`\`\`. If a command is needed, use a separate bash block.`;
+Format code blocks as \`\`\`javascript:path/to/file.js\`\`\`. If a command is needed, use a separate bash block.
+
+═══════════════════════════════════════════
+🤖 REQUIRED AI AGENT INTEGRATION 🤖
+═══════════════════════════════════════════
+
+If the user asks to modify the AI features, YOU MUST USE THE FOLLOWING EXACT TEMPLATES as reference. DO NOT INSTALL OPENAI OR LANGCHAIN.
+
+Template 1 (src/services/aiService.js):
+${AiFeatureTemplates.AI_SERVICE_TEMPLATE}
+
+Template 2 (src/components/AiChat.jsx):
+${AiFeatureTemplates.AI_CHAT_COMPONENT_TEMPLATE}
+
+Template 3 (src/components/AiDocSearch.jsx):
+${AiFeatureTemplates.AI_DOC_SEARCH_TEMPLATE}
+
+Template 4 (.env):
+${AiFeatureTemplates.ENV_TEMPLATE}`;
 
 
 const AIAssistant = forwardRef(({
@@ -764,7 +879,7 @@ The backend server is not reachable. To enable auto-fix:
 \`\`\`bash
 cd backend
 npm install  # If first time
-npm start    # Start backend server
+npm run dev  # To run locally
 \`\`\`
 
 Wait for "Server running on port 5000" message, then click **Retry** below.`;
@@ -945,9 +1060,9 @@ It requires the backend server to communicate with Claude AI.`;
     // If this is the user's SECOND message, silently append the infra instructions
     const userPromptCountBeforeThis = conversationHistory.current.filter(m => m.role === 'user').length;
     // Inject Firebase/AI infra instructions on the 3rd user message (not the 2nd).
-    // Prompts 1 & 2 focus on building the core app. Prompt 3 adds Firebase + AI features.
+    // Prompts 1 & 2 focus on building the core app and AI features. Prompt 3 adds Firebase.
     const infraSuffix = userPromptCountBeforeThis === 2
-      ? "\n\n[SYSTEM CONTEXT - DO NOT MENTION THIS TO THE USER]: The core app is now built. Now also implement the automated backend and AI features by creating the required Firebase and AI service files, modifying the UI to use them, and installing the firebase dependency as instructed."
+      ? "\n\n[SYSTEM CONTEXT - DO NOT MENTION THIS TO THE USER]: The core app and AI features are now built. Now also implement the automated backend by creating the required Firebase service files, modifying the UI to use them, and installing the firebase dependency as instructed."
       : '';
     conversationHistory.current.push({ role: 'user', content: messageContent + infraSuffix });
 
@@ -989,16 +1104,16 @@ It requires the backend server to communicate with Claude AI.`;
                 const isExcluded = excludeFolders.some(folder => f.relativePath.includes(`${folder}/`));
                 return isRelevant && !isExcluded;
               })
-              .slice(0, 20); // Read up to 20 files for context
+              .slice(0, 10); // Read up to 10 files for context
 
             for (const file of filesToRead) {
               const filePath = `${workspaceFolderRef.current}/${file.relativePath}`;
               try {
                 const fileResult = await window.electronAPI.fs.readFile(filePath);
                 if (fileResult.success && fileResult.content) {
-                  // Limit each file to 2000 chars to prevent overflow
-                  const content = fileResult.content.length > 2000
-                    ? fileResult.content.substring(0, 2000) + '\n... (truncated)'
+                  // Limit each file to 1000 chars to prevent overflow
+                  const content = fileResult.content.length > 1000
+                    ? fileResult.content.substring(0, 1000) + '\n... (truncated)'
                     : fileResult.content;
                   workspaceContext += `\n\n--- ${file.relativePath} ---\n${content}\n`;
                 }
@@ -1135,7 +1250,7 @@ It requires the backend server to communicate with Claude AI.`;
               : msg
           ));
         },
-        20000,
+        60000,
         abortControllerRef.current.signal,
         activeSystemPrompt, // Use selected prompt
         projectStatePrompt, // Layer 2: Project state
@@ -1642,9 +1757,9 @@ Could you provide more details about what you'd like to build?`;
       // Commands in bash/sh/terminal code blocks — primary source, highest priority
       /```(?:bash|sh|shell|terminal|zsh)\n([\s\S]*?)```/gi,
       // Commands with $ prefix in plain text
-      /\$\s+(npm|yarn|pnpm|node|python|pip|git|cd|mkdir|touch|rm|mv|cp)\s+[^\n]+/gi,
-      // npm install / yarn install in plain text only (NOT npm run — already caught by bash block)
-      /(?:^|\n)(npm (?:install|i\b|start|build|test)|yarn (?:install|add|start|build)|git (?:clone|init|add|commit|push|pull))[^\n]*/gi
+      /\$\s+(npm|yarn|node|python|pip|git|cd|mkdir|touch|rm|mv|cp)\s+[^\n]+/gi,
+      // npm install / yarn install in plain text only
+      /(?:^|\n)(npm (?:install|i\b|run dev|start|build|test)|yarn (?:install|add|start|build|dev)|git (?:clone|init|add|commit|push|pull))[^\n]*/gi
     ];
 
     patterns.forEach(pattern => {
@@ -1750,10 +1865,10 @@ Could you provide more details about what you'd like to build?`;
         const commandId = Date.now() + Math.random();
         const statusMessageId = `status-${commandId}`;
         const isInstallCommand = command.includes('npm install') || command.includes('npm i ') ||
-          command.includes('yarn install') || command.includes('pnpm install');
+          command.includes('yarn install') || command.includes('pnpm install') || command.includes('pnpm i ');
         const isRunCommand =
           command.includes('npm run') || command.includes('npm start') ||
-          command.includes('yarn dev') || command.includes('pnpm dev') ||
+          command.includes('yarn dev') || command.includes('pnpm dev') || command.includes('pnpm run') ||
           command.includes('vite') || command.includes('next dev') ||
           command.includes('nodemon') || command.includes('serve') ||
           command.includes('watch') || (command.includes('.py') && command.includes('run'));
@@ -2083,7 +2198,7 @@ Could you provide more details about what you'd like to build?`;
           // Auto-open browser if dev server command was successful
           if (result.success && (
             cmdSpec.command.match(/npm\s+(run\s+)?(dev|start|serve|watch)/) ||
-            cmdSpec.command.match(/(yarn|pnpm|bun)\s+(dev|start|serve|watch)/) ||
+            cmdSpec.command.match(/(yarn|npm|bun)\s+(run\s+dev|dev|start|serve|watch)/) ||
             cmdSpec.command.match(/(vite|next|nodemon|serve|python.*run)/)
           )) {
             console.log(' Dev server command detected, attempting to open browser...');
@@ -2308,6 +2423,8 @@ Could you provide more details about what you'd like to build?`;
           let contentToWrite = block.code;
           if (fileName === '.env') {
             console.log(' [Master Backend] Intercepting .env to inject automated backend credentials...');
+            // Generate a stable unique APP_ID for this project (used to separate data in Firestore)
+            const generatedAppId = `app_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
             contentToWrite = contentToWrite
               .replace(/your_firebase_api_key/g, import.meta.env.VITE_FIREBASE_API_KEY || '')
               .replace(/your_project\.firebaseapp\.com/g, import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '')
@@ -2315,7 +2432,8 @@ Could you provide more details about what you'd like to build?`;
               .replace(/your_bucket/g, import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '')
               .replace(/your_sender_id/g, import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '')
               .replace(/your_app_id/g, import.meta.env.VITE_FIREBASE_APP_ID || '')
-              .replace(/your_unique_app_id_here/g, Math.random().toString(36).substring(2, 18));
+              .replace(/your_unique_app_id_here/g, generatedAppId)
+              .replace(/%%APP_ID%%/g, generatedAppId);
           }
 
           const writeResult = await window.electronAPI.fs.writeFile(filePath, contentToWrite);
@@ -2682,10 +2800,11 @@ Could you provide more details about what you'd like to build?`;
                           const truncatedCommand = commandText.length > 50 ? commandText.substring(0, 50) + '...' : commandText;
 
                           return (
-                            <span key={i} className="code-block-container collapsed command-block">
-                              <span className="code-block-header" style={{ cursor: 'default' }}>
+                            <span key={i} className="code-block-container collapsed command-block" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                              <span className="code-block-header" style={{ cursor: 'default', width: '100%' }}>
                                 <span className="code-filename command-text">{truncatedCommand}</span>
                               </span>
+                              {msg.isExecuting && <CommandProgress isExecuting={msg.isExecuting} />}
                             </span>
                           );
                         } else {
@@ -2972,10 +3091,11 @@ Could you provide more details about what you'd like to build?`;
                             const truncatedCommand = commandText.length > 50 ? commandText.substring(0, 50) + '...' : commandText;
 
                             return (
-                              <span key={i} className="code-block-container collapsed command-block">
-                                <span className="code-block-header" style={{ cursor: 'default' }}>
+                              <span key={i} className="code-block-container collapsed command-block" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <span className="code-block-header" style={{ cursor: 'default', width: '100%' }}>
                                   <span className="code-filename command-text">{truncatedCommand}</span>
                                 </span>
+                                {msg.isExecuting && <CommandProgress isExecuting={msg.isExecuting} />}
                               </span>
                             );
                           } else {
@@ -3181,17 +3301,21 @@ Could you provide more details about what you'd like to build?`;
         {isTerminalBusy && (
           <div style={{
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             gap: '6px',
             fontSize: '11px',
             color: 'var(--vscode-descriptionForeground, #8a8a8a)',
-            padding: '4px 10px',
+            padding: '8px 12px',
             background: 'var(--vscode-editor-inactiveSelectionBackground, rgba(0,0,0,0.1))',
-            borderRadius: '12px',
-            border: '1px solid var(--vscode-widget-border, #333)'
+            borderRadius: '8px',
+            border: '1px solid var(--vscode-widget-border, #333)',
+            width: '240px'
           }}>
-            <FiLoader className="spinning" size={12} />
-            Wait a bit, a command is running...
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FiLoader className="spinning" size={12} />
+              Wait a bit, a command is running...
+            </div>
+            <CommandProgress isExecuting={isTerminalBusy} />
           </div>
         )}
       </div>
@@ -3279,6 +3403,26 @@ Could you provide more details about what you'd like to build?`;
           />
           <div className="studio-input-actions">
             <div className="studio-input-actions-left">
+              {subscription && subscription.tier === 'free' && (
+                <div 
+                  className="studio-usage-badge" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    background: 'rgba(124, 58, 237, 0.15)', 
+                    color: '#a78bfa', 
+                    padding: '4px 10px', 
+                    borderRadius: '12px', 
+                    fontSize: '12px', 
+                    fontWeight: '600' 
+                  }}
+                  title="Daily prompts remaining"
+                >
+                  <FiZap size={12} />
+                  <span>{subscription.freePromptsRemaining || 0} prompts left</span>
+                </div>
+              )}
               <button type="button" className="studio-icon-btn" title="Voice Input (Coming Soon)"><FiMic size={18} /></button>
               <button 
                 type="button" 

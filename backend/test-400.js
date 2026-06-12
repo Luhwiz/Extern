@@ -9,18 +9,20 @@ const anthropic = new AnthropicBedrock({
 
 async function run() {
   try {
-    console.log('Sending request to Bedrock...', process.env.AWS_BEDROCK_MODEL_ID);
     const stream = anthropic.messages.stream({
       model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
-      max_tokens: 60000,
-      messages: [{ role: 'user', content: 'hello' }],
+      max_tokens: 6000000, // Invalid max tokens
+      messages: [{ role: "user", content: "hello" }],
     });
 
     stream.on('text', (t) => console.log('Text:', t));
-    stream.on('error', (e) => console.log('Stream Error:', e));
+    stream.on('error', (e) => {
+        console.log('Stream Error emitted:', e.message);
+    });
     stream.on('end', () => console.log('Stream ended'));
+
   } catch (e) {
-    console.log('Catch block:', e);
+    console.log('Outer catch block:', e.message);
   }
 }
 run();
