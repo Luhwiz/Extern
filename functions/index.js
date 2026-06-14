@@ -47,6 +47,7 @@ const openaiRoutes = require('./routes/openai');
 app.use('/api/claude', claudeRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/openai', openaiRoutes);
+app.use('/api/generated-app', require('./routes/generatedAppAi'));
 
 // Health check route
 app.get('/health', (req, res) => {

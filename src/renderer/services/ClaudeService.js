@@ -3,8 +3,8 @@
 
 import FirebaseService from './FirebaseService';
 
-const isDev = import.meta.env.DEV;
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (isDev ? 'http://localhost:5000' : 'https://api-bkrpnxig4a-uc.a.run.app');
+const isDev = process.env.NODE_ENV === 'development';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (isDev ? 'http://localhost:5000' : 'https://api-905625488730.us-central1.run.app');
 
 async function getAuthToken() {
   try {

@@ -127,9 +127,8 @@ class PublishService {
    */
   async buildIfNeeded(workspaceFolder, onProgress) {
     try {
-      // Check if there's already a build output
-      const existingBuild = await this.detectBuildOutput(workspaceFolder);
-      if (existingBuild.buildPath) return; // Already built
+      // Always rebuild to ensure the latest changes are deployed
+      // We intentionally do not skip if existingBuild.buildPath exists
 
       // Check if package.json has a build script
       const pkgResult = await window.electronAPI.fs.readFile(`${workspaceFolder}/package.json`);

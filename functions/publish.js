@@ -122,8 +122,8 @@ async function serveFile(res, file, filePath, appId) {
   if (ext === '.html') {
     let html = content.toString('utf-8');
     const base = `/app/${appId}/`;
-    // Rewrite src="/..." and href="/..." to be relative to the app base
-    html = html.replace(/(src|href|action)="\//g, `$1="${base}`);
+    // Rewrite src="/..." and src="./..." to be relative to the app base
+    html = html.replace(/(src|href|action)="\.?\//g, `$1="${base}`);
     content = Buffer.from(html, 'utf-8');
   }
 
