@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-2022]
 
     steps:
       - name: Check out git repository
@@ -35,7 +35,7 @@ jobs:
           python-version: '3.11'
 
       - name: Setup Visual Studio Build Tools (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         uses: microsoft/setup-msbuild@v2
 
       - name: Install dependencies
@@ -109,7 +109,7 @@ jobs:
           node scripts/download-node.js darwin-x64
 
       - name: Download Standalone Node.js (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         shell: bash
         run: node scripts/download-node.js win32-x64
         
@@ -122,7 +122,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Build Electron App (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         shell: bash
         run: npx electron-builder --win --x64 --publish always
         env:
