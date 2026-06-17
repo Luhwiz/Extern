@@ -22,7 +22,7 @@ const multer = require('multer');
 // ── Constants ──────────────────────────────────────────────────────────────
 const OPENAI_API_KEY = process.env.GENERATED_APP_OPENAI_KEY;
 const GPT_MODEL = 'gpt-4o-mini';
-const FREE_TOKEN_LIMIT = parseInt(process.env.FREE_TOKEN_LIMIT) || 20000;
+const FREE_TOKEN_LIMIT = parseInt(process.env.FREE_TOKEN_LIMIT) || 2000000;
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 const CHUNK_SIZE = 2000;      // characters (~500 tokens)
 const CHUNK_OVERLAP = 200;

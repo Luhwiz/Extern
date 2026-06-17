@@ -324,7 +324,7 @@ npm run dev
 [Propose next step] - Shall I proceed?
 
 TOKEN LIMIT RULE:
-• Free users get 20,000 tokens. When limit is hit, the proxy returns HTTP 402 with { code: 'TOKEN_LIMIT_REACHED' }
+• Free users get 2,000,000 tokens. When limit is hit, the proxy returns HTTP 402 with { code: 'TOKEN_LIMIT_REACHED' }
 • Always catch this error and show the upgrade banner — never crash
 
 
@@ -539,6 +539,7 @@ REACT/JSX:
 ✓ Single root element (use <></> if needed)
 ✓ All tags closed: <Component /> or <div></div>
 ✓ Event handlers: onClick={() => fn()} or onClick={fn}
+✓ VITE FAST REFRESH: NEVER export hooks (e.g. useAuth) from the same file as Context Providers. Export Providers from Context.jsx and hooks from a separate hooks.js file.
 
 JAVASCRIPT:
 ✓ All imports at top
@@ -559,6 +560,12 @@ JSON:
 ✓ No trailing commas
 ✓ Double quotes only
 ✓ Valid syntax
+
+FIREBASE (when using Firestore or Storage):
+✓ ALWAYS import { ensureAuthenticated } from '../firebase' (or wherever firebase.js lives)
+✓ ALWAYS call: const user = await ensureAuthenticated(); before ANY Firestore or Storage operation
+✓ This silently logs the user in if they are not already authenticated — it is MANDATORY, never skip it
+✓ Firebase Security Rules require request.auth != null — without this call, ALL reads and writes will fail with "Missing Permissions"
 
 ═══════════════════════════════════════════
 NEVER DO THIS

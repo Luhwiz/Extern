@@ -17,7 +17,6 @@
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
-const multer = require('multer');
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const OPENAI_API_KEY = process.env.GENERATED_APP_OPENAI_KEY;
@@ -29,11 +28,6 @@ const CHUNK_OVERLAP = 200;
 const TOP_K_CHUNKS = 4;       // how many chunks to retrieve for RAG
 
 const db = admin.firestore();
-
-// multer v2 uses storage() factory; v1 uses multer({ storage })
-// This pattern works with both versions
-const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -247,21 +241,25 @@ router.post('/chat', async (req, res) => {
 
 /**
  * POST /api/generated-app/documents
- * Upload a document (PDF text or plain text) and index it for RAG.
+ * Index a document for RAG that was uploaded directly to Firebase Storage.
  * Uses Firebase Firestore to store chunks + embeddings.
  * 
- * Multipart form: file (text/plain or application/pdf) + field appId
+ * Body: { filePath: string, fileName: string }
  * Headers: X-App-Id: <generated_app_id>
  */
-router.post('/documents', upload.single('file'), async (req, res) => {
+router.post('/documents', express.json(), async (req, res) => {
   try {
     const appId = req.headers['x-app-id'] || req.body.appId;
     if (!appId) return res.status(400).json({ error: 'X-App-Id header or appId field required' });
 
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const { filePath, fileName = 'document' } = req.body;
+    if (!filePath) return res.status(400).json({ error: 'filePath is required' });
 
-    const fileText = req.file.buffer.toString('utf-8');
-    const fileName = req.file.originalname || 'document';
+    console.log(`[GeneratedAppAI] Downloading file from storage: ${filePath}`);
+    const bucket = admin.storage().bucket();
+    const [fileBuffer] = await bucket.file(filePath).download();
+    
+    const fileText = fileBuffer.toString('utf-8');
 
     // Chunk the document
     const chunks = chunkText(fileText);

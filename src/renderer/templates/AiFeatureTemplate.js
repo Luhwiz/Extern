@@ -17,6 +17,7 @@ export const FIREBASE_INIT_TEMPLATE = `
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 // Extern AI — centrally managed Firebase backend
 const firebaseConfig = {
@@ -31,6 +32,23 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const auth = getAuth(app);
+
+let authPromise = null;
+export const ensureAuthenticated = async () => {
+  if (auth.currentUser) return auth.currentUser;
+  if (!authPromise) {
+    authPromise = signInAnonymously(auth).then(userCred => userCred.user);
+  }
+  return authPromise;
+};
+
+// ── Auto-initialize auth silently on app load ─────────────────────────────
+// This guarantees request.auth != null for ALL Firebase operations,
+// even if the builder did not add user authentication to their app.
+// If the builder DID add their own auth (email/password, Google, etc.),
+// that login will automatically replace this anonymous session.
+ensureAuthenticated().catch(() => {});
 `;
 
 // ─── 2. Environment Config Template ───────────────────────────────────────
@@ -50,8 +68,9 @@ VITE_FIREBASE_APP_ID=1:905625488730:web:a1fbbe4260c6cea98d3763
 // ─── 3. AI Service — calls Cloud Function, saves to Firestore ────────────
 // Injected as: src/services/aiService.js
 export const AI_SERVICE_TEMPLATE = `
-import { db } from '../firebase';
+import { db, storage, auth, ensureAuthenticated } from '../firebase';
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable } from 'firebase/storage';
 
 // Extern AI centrally-managed AI proxy (OpenAI GPT-4o-mini — no key needed)
 const AI_FUNCTION_URL = 'https://api-bkrpnxig4a-uc.a.run.app/api/generated-app';
@@ -75,8 +94,9 @@ export async function chat(messages, systemPrompt = '') {
 
   // Save conversation to Firestore
   try {
+    const user = await ensureAuthenticated();
     const lastUserMsg = messages[messages.length - 1];
-    await addDoc(collection(db, 'chatHistory'), {
+    await addDoc(collection(db, 'users', user.uid, 'chatHistory'), {
       appId: APP_ID,
       userMessage: lastUserMsg?.content || '',
       aiReply: data.reply,
@@ -94,8 +114,9 @@ export async function chat(messages, systemPrompt = '') {
 // ── Load chat history from Firestore ─────────────────────────────────────
 export async function loadChatHistory(limitCount = 50) {
   try {
+    const user = await ensureAuthenticated();
     const q = query(
-      collection(db, 'chatHistory'),
+      collection(db, 'users', user.uid, 'chatHistory'),
       orderBy('timestamp', 'desc'),
     );
     const snap = await getDocs(q);
@@ -110,31 +131,126 @@ export async function loadChatHistory(limitCount = 50) {
   }
 }
 
-// ── Upload a document for RAG (PDF / plain text) ──────────────────────────
-export async function uploadDocument(file) {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await fetch(\`\${AI_FUNCTION_URL}/documents\`, {
-    method: 'POST',
-    headers: { 'X-App-Id': APP_ID },
-    body: form,
+// ── Document Parsers (Lazy Loaded) ────────────────────────────────────────
+const loadPdfJs = async () => {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Upload failed');
-  return data;
+};
+
+const loadMammoth = async () => {
+  if (window.mammoth) return window.mammoth;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js';
+    script.onload = () => resolve(window.mammoth);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+};
+
+async function extractText(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  
+  if (['txt', 'md', 'csv', 'json'].includes(ext)) {
+    return await file.text();
+  }
+  
+  if (ext === 'pdf') {
+    const pdfjs = await loadPdfJs();
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      fullText += pageText + '\\n';
+    }
+    return fullText;
+  }
+  
+  if (ext === 'docx') {
+    const mammoth = await loadMammoth();
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+  
+  throw new Error('Unsupported file type for text extraction');
+}
+
+// ── Upload a document for RAG (PDF / plain text) ──────────────────────────
+export async function uploadDocument(file, onProgress) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const user = await ensureAuthenticated();
+      // 1. Upload to Firebase Storage
+      const storageRef = ref(storage, \`user_files/\${user.uid}/\${Date.now()}_\${file.name}\`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        if (onProgress) onProgress(progress);
+      },
+      (error) => {
+        reject(error);
+      },
+      async () => {
+        // 2. Upload complete, extract text client-side
+        if (onProgress) onProgress(100);
+        try {
+          const text = await extractText(file);
+          // 3. Cache extracted text locally (bypass CORS/backend parsing completely)
+          localStorage.setItem(\`doc_\${storageRef.fullPath}\`, text);
+          
+          resolve({ documentId: storageRef.fullPath, fileName: file.name, chunksIndexed: 1 });
+        } catch (err) {
+          reject(err);
+        }
+      }
+    );
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 // ── Ask a question about uploaded documents (RAG) ─────────────────────────
 export async function queryDocuments(question, documentId = null) {
-  const res = await fetch(\`\${AI_FUNCTION_URL}/query\`, {
+  // Read from localStorage cache
+  const text = localStorage.getItem(\`doc_\${documentId}\`);
+  if (!text) throw new Error('Document text not found in local cache');
+  
+  // Cap at ~20,000 characters to prevent hitting token limits
+  const safeText = text.substring(0, 20000);
+  
+  const messages = [
+    { role: 'system', content: \`Answer the user's question based strictly on the following document:\n\n\${safeText}\` },
+    { role: 'user', content: question }
+  ];
+  
+  const res = await fetch(\`\${AI_FUNCTION_URL}/chat\`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ question, documentId }),
+    body: JSON.stringify({ messages }),
   });
+  
   const data = await res.json();
   if (res.status === 402) throw { code: 'TOKEN_LIMIT_REACHED', ...data };
   if (!res.ok) throw new Error(data.error || 'Query failed');
-  return data;
+  
+  return { answer: data.reply };
 }
 
 // ── Fetch current token usage ─────────────────────────────────────────────
@@ -291,14 +407,19 @@ export default function AiDocSearch() {
   const [loading,  setLoading]  = useState(false);
   const [status,   setStatus]   = useState('');
   const [limitHit, setLimitHit] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setLoading(true);
-    setStatus('Indexing document…');
+    setProgress(0);
+    setStatus('Uploading... 0%');
     try {
-      const result = await uploadDocument(file);
+      const result = await uploadDocument(file, (p) => {
+        setProgress(p);
+        setStatus(p < 100 ? \`Uploading... \${p}%\` : 'Indexing document...');
+      });
       setDocId(result.documentId);
       setFileName(result.fileName);
       setStatus(\`✅ "\${result.fileName}" indexed (\${result.chunksIndexed} sections)\`);
@@ -306,6 +427,7 @@ export default function AiDocSearch() {
       setStatus('❌ Upload failed: ' + err.message);
     } finally {
       setLoading(false);
+      setProgress(0);
     }
   };
 
@@ -332,9 +454,16 @@ export default function AiDocSearch() {
     <div className="ai-doc-search">
       <h3>📄 Ask Your Documents</h3>
       <label className="ai-upload-btn">
-        {loading ? 'Processing…' : fileName ? \`📎 \${fileName}\` : '+ Upload Document'}
+        {loading ? (progress > 0 && progress < 100 ? \`Uploading \${progress}%\` : 'Processing…') : fileName ? \`📎 \${fileName}\` : '+ Upload Document'}
         <input type="file" accept=".txt,.md,.csv,.json" onChange={handleUpload} hidden />
       </label>
+      
+      {loading && progress > 0 && progress < 100 && (
+        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+          <div style={{ width: \`\${progress}%\`, height: '100%', background: '#6366f1', borderRadius: '2px', transition: 'width 0.2s ease-out' }} />
+        </div>
+      )}
+      
       {status && <p className="ai-upload-status">{status}</p>}
 
       {docId && (
