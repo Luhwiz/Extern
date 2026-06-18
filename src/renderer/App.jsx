@@ -38,7 +38,7 @@ function App() {
   const [aiVisible, setAiVisible] = useState(true);
   const [explorerRefreshTrigger, setExplorerRefreshTrigger] = useState(0);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
-  const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'dark');
+  const [theme, setTheme] = useState(localStorage.getItem('app_theme') || 'light');
   const [isStudioMode, setIsStudioMode] = useState(true);
   const [studioSidebarCollapsed, setStudioSidebarCollapsed] = useState(false);
   const [isReviewSidebarOpen, setIsReviewSidebarOpen] = useState(false);

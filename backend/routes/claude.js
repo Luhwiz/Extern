@@ -101,7 +101,7 @@ router.post('/plan', authenticateToken, async (req, res) => {
     console.log(`[Plan] Generating implementation plan for: ${prompt.substring(0, 80)}...`);
 
     const completion = await anthropic.messages.create({
-      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-4.6-sonnet',
       max_tokens: 2048,
       system: 'You are a concise technical planner. Write a plan in EXACTLY this format using markdown bold for subtitles:\n\n**Goal:** One sentence on what is being built.\n**UI:** What the interface looks like.\n**Data:** What data/state is managed.\n**AI:** How AI is involved (if at all).\n\nSTRICT RULES: Maximum 60 words total. No bullet sub-lists. No code. Plain English only. Bold the subtitle labels.',
       messages: [
@@ -137,7 +137,7 @@ router.post('/summarize', authenticateToken, async (req, res) => {
 
     // Call Claude to summarize
     const completion = await anthropic.messages.create({
-      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-4.6-sonnet',
       max_tokens: 2048,
       system: 'You are a technical summarizer. Generate concise, fact-based summaries.',
       messages: [
@@ -603,10 +603,10 @@ You are the developer. Execute. Deliver. Every file complete and runnable.`;
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Start Anthropic stream (safely clamp max_tokens to AWS limit 8192)
+    // Start Anthropic stream
     const stream = anthropic.messages.stream({
-      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-3-5-sonnet-20241022',
-      max_tokens,
+      model: process.env.AWS_BEDROCK_MODEL_ID || 'claude-4.6-sonnet',
+      max_tokens: 60000,
       system: finalSystemPrompt,
       messages: messages,
     });

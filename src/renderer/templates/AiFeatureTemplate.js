@@ -269,7 +269,99 @@ export const AI_CHAT_COMPONENT_TEMPLATE = `
 import React, { useState, useRef, useEffect } from 'react';
 import { chat, loadChatHistory } from '../services/aiService';
 
-export default function AiChat({ systemPrompt = 'You are a helpful AI assistant.' }) {
+// ── Lightweight Markdown Renderer (zero dependencies) ─────────────────────
+function renderMarkdown(text) {
+  if (!text) return '';
+
+  // Escape HTML
+  const escape = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const lines = text.split('\\n');
+  let html = '';
+  let inUl = false, inOl = false, inCode = false, codeBuffer = '', olIndex = 0;
+
+  const closeList = () => {
+    if (inUl) { html += '</ul>'; inUl = false; }
+    if (inOl) { html += '</ol>'; inOl = false; olIndex = 0; }
+  };
+
+  const inline = (s) => s
+    .replace(/\`([^\`]+)\`/g, '<code style="background:rgba(0,0,0,0.15);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:0.875em">$1</code>')
+    .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')
+    .replace(/\\*(.+?)\\*/g, '<em>$1</em>')
+    .replace(/~~(.+?)~~/g, '<del>$1</del>')
+    .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:underline">$1</a>');
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw;
+
+    // Fenced code block
+    if (line.startsWith('\`\`\`')) {
+      if (!inCode) {
+        closeList();
+        inCode = true;
+        codeBuffer = '';
+      } else {
+        html += \`<pre style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0"><code style="font-family:monospace;font-size:0.85em;white-space:pre">\${escape(codeBuffer.trimEnd())}</code></pre>\`;
+        inCode = false;
+        codeBuffer = '';
+      }
+      continue;
+    }
+    if (inCode) { codeBuffer += raw + '\\n'; continue; }
+
+    // Horizontal rule
+    if (/^[-*_]{3,}$/.test(line.trim())) { closeList(); html += '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.15);margin:16px 0">'; continue; }
+
+    // Headings
+    const h4 = line.match(/^####\\s+(.*)/); if (h4) { closeList(); html += \`<h4 style="font-size:1em;font-weight:700;margin:12px 0 4px">\${inline(h4[1])}</h4>\`; continue; }
+    const h3 = line.match(/^###\\s+(.*)/);  if (h3) { closeList(); html += \`<h3 style="font-size:1.1em;font-weight:700;margin:14px 0 6px">\${inline(h3[1])}</h3>\`; continue; }
+    const h2 = line.match(/^##\\s+(.*)/);   if (h2) { closeList(); html += \`<h2 style="font-size:1.2em;font-weight:700;margin:16px 0 8px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px">\${inline(h2[1])}</h2>\`; continue; }
+    const h1 = line.match(/^#\\s+(.*)/);    if (h1) { closeList(); html += \`<h1 style="font-size:1.4em;font-weight:800;margin:18px 0 10px">\${inline(h1[1])}</h1>\`; continue; }
+
+    // Blockquote
+    const bq = line.match(/^>\\s?(.*)/); if (bq) { closeList(); html += \`<blockquote style="border-left:3px solid rgba(255,255,255,0.3);padding-left:12px;margin:8px 0;opacity:0.8">\${inline(bq[1])}</blockquote>\`; continue; }
+
+    // Table row
+    if (line.includes('|') && line.trim().startsWith('|')) {
+      const cols = line.trim().replace(/^\\||\\|$/g,'').split('|');
+      const isDiv = cols.every(c => /^[:\\-\\s]+$/.test(c));
+      if (!isDiv) {
+        const tag = (html.slice(-8) === '</thead>' || !html.includes('<table')) ? 'td' : 'th';
+        const isHeader = !html.includes('<table');
+        if (isHeader) { closeList(); html += '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:0.9em"><thead><tr>'; }
+        else if (!html.includes('<tbody>')) html += '<tbody><tr>';
+        else html += '<tr>';
+        cols.forEach(c => { html += \`<\${isHeader?'th':'td'} style="border:1px solid rgba(255,255,255,0.15);padding:8px 12px;text-align:left">\${inline(c.trim())}</\${isHeader?'th':'td'}>\`; });
+        html += isHeader ? '</tr></thead>' : '</tr>';
+      }
+      continue;
+    }
+    if (html.includes('<tbody>') && !line.trim()) { html += '</tbody></table>'; continue; }
+
+    // Unordered list
+    const ul = line.match(/^(\\s*)[*\\-+]\\s+(.*)/);
+    if (ul) { if (!inUl) { closeList(); html += '<ul style="margin:8px 0;padding-left:20px;list-style:disc">'; inUl = true; } html += \`<li style="margin:4px 0">\${inline(ul[2])}</li>\`; continue; }
+
+    // Ordered list
+    const ol = line.match(/^\\s*\\d+\\.\\s+(.*)/);
+    if (ol) { if (!inOl) { closeList(); html += '<ol style="margin:8px 0;padding-left:20px">'; inOl = true; } html += \`<li style="margin:4px 0">\${inline(ol[1])}</li>\`; continue; }
+
+    // Blank line
+    if (!line.trim()) { closeList(); html += '<br>'; continue; }
+
+    // Paragraph
+    closeList();
+    html += \`<p style="margin:6px 0;line-height:1.65">\${inline(line)}</p>\`;
+  }
+
+  closeList();
+  return html;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────
+export default function AiChat({ systemPrompt = 'You are an AI assistant created by Extern AI. Your responses must always be professionally structured, well-formatted, and easy to read. Adopt a personality based on the specific application you are integrated into.' }) {
   const [messages,  setMessages]  = useState([]);
   const [input,     setInput]     = useState('');
   const [loading,   setLoading]   = useState(false);
@@ -306,7 +398,6 @@ export default function AiChat({ systemPrompt = 'You are a helpful AI assistant.
     try {
       const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
       const result  = await chat(history, systemPrompt);
-
       setMessages(prev => [...prev, { role: 'assistant', content: result.reply }]);
       setUsage({ tokensUsed: result.tokensTotal, freeLimit: result.freeLimit });
     } catch (err) {
@@ -328,20 +419,23 @@ export default function AiChat({ systemPrompt = 'You are a helpful AI assistant.
       <div className="ai-chat-messages">
         {messages.length === 0 && (
           <div className="ai-chat-empty">
-            <span>✨ AI Assistant</span>
+            <span>✨ AI Assistant — Powered by Extern AI</span>
             <p>Ask me anything! Your conversations are saved automatically.</p>
           </div>
         )}
         {messages.map((m, i) => (
           <div key={i} className={\`ai-chat-message \${m.role}\`}>
-            <span className="ai-chat-role">{m.role === 'user' ? 'You' : 'AI'}</span>
-            <p>{m.content}</p>
+            <span className="ai-chat-role">{m.role === 'user' ? 'You' : '✦ Extern AI'}</span>
+            {m.role === 'assistant'
+              ? <div className="ai-chat-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }} />
+              : <p>{m.content}</p>
+            }
           </div>
         ))}
         {loading && (
           <div className="ai-chat-message assistant ai-chat-thinking">
-            <span className="ai-chat-role">AI</span>
-            <p>Thinking…</p>
+            <span className="ai-chat-role">✦ Extern AI</span>
+            <p style={{opacity:0.6}}>Thinking…</p>
           </div>
         )}
         <div ref={bottomRef} />
@@ -394,6 +488,7 @@ export default function AiChat({ systemPrompt = 'You are a helpful AI assistant.
 `;
 
 // ─── 5. Document Upload + RAG Component ───────────────────────────────────
+
 // Injected as: src/components/AiDocSearch.jsx
 export const AI_DOC_SEARCH_TEMPLATE = `
 import React, { useState } from 'react';

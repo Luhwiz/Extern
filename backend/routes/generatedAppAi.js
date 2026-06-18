@@ -80,19 +80,19 @@ function isWithinLimit(usage) {
 
 
 /**
- * Call the OpenAI Chat Completions API.
+ * Call the DeepSeek API for Chat Completions.
  */
 async function callOpenAI(messages, maxTokens = 1000) {
-  if (!OPENAI_API_KEY) throw new Error('GENERATED_APP_OPENAI_KEY not configured');
+  const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
     },
     body: JSON.stringify({
-      model: GPT_MODEL,
+      model: 'deepseek-v4-pro',
       messages,
       max_tokens: maxTokens,
       temperature: 0.7,
@@ -101,7 +101,7 @@ async function callOpenAI(messages, maxTokens = 1000) {
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`OpenAI error ${response.status}: ${err}`);
+    throw new Error(`DeepSeek error ${response.status}: ${err}`);
   }
   const data = await response.json();
   return data;
@@ -212,21 +212,50 @@ router.post('/chat', async (req, res) => {
     if (!isWithinLimit(usage)) {
       return res.status(402).json({
         error: 'TOKEN_LIMIT_REACHED',
-        message: "This app has used all 20,000 free AI tokens. The app creator must upgrade to Pro.",
+        message: "This app has reached its free AI token limit. The app creator must upgrade to continue.",
         tokensUsed: usage.tokensUsed,
         freeLimit: FREE_TOKEN_LIMIT,
         upgradeUrl: 'https://externai.com/upgrade',
       });
     }
 
-    // Build messages array
+    // Mandatory base system prompt — always enforced at server level
+    const BASE_SYSTEM_PROMPT = `You are an AI assistant created and powered by Extern AI.
+
+CORE IDENTITY:
+- You are built by Extern AI company.
+- You must NEVER claim to be ChatGPT, GPT-4, Claude, Gemini, DeepSeek R1, or any other third-party AI.
+- If asked who made you or what model you are, always say: "I am an AI assistant built by Extern AI."
+- Adopt a personality and tone that fits the specific application you are integrated into (e.g., formal for legal apps, friendly for social apps, technical for developer tools).
+
+RESPONSE STRUCTURE — MANDATORY:
+- Always structure responses clearly and professionally, like a well-written document.
+- Use headings, bullet points, numbered lists, and bold text where appropriate.
+- Break long answers into clearly labeled sections.
+- Never respond with a single unformatted wall of text.
+- Start with a direct answer or summary, then provide supporting details.
+- End complex responses with a brief conclusion or next-step suggestion.
+
+TONE:
+- Professional, confident, and clear.
+- Friendly but not casual or sloppy.
+- No unnecessary filler words or repetition.
+
+RESPONSE LENGTH:
+- Match the length of your response to the complexity of the question.
+- Simple or factual questions: give a concise, direct answer (1-3 sentences or a short list).
+- Complex, multi-part, or technical questions: give a thorough, complete answer with all relevant sections — never truncate or cut off.
+- Never end a response mid-sentence or mid-thought. Always finish completely.`;
+
+    // Build messages array — merge base prompt with any app-specific system prompt
     const openAIMessages = [];
-    if (systemPrompt) {
-      openAIMessages.push({ role: 'system', content: systemPrompt });
-    }
+    const mergedSystemPrompt = systemPrompt
+      ? `${BASE_SYSTEM_PROMPT}\n\nAPP-SPECIFIC INSTRUCTIONS:\n${systemPrompt}`
+      : BASE_SYSTEM_PROMPT;
+    openAIMessages.push({ role: 'system', content: mergedSystemPrompt });
     openAIMessages.push(...messages);
 
-    const data = await callOpenAI(openAIMessages, 800);
+    const data = await callOpenAI(openAIMessages, 40000);
     const tokensUsed = data.usage?.total_tokens || 0;
     const reply = data.choices?.[0]?.message?.content || '';
 
@@ -417,7 +446,7 @@ async function answerWithRAG(question, context, appId, usage, res) {
     { role: 'user', content: question },
   ];
 
-  const data = await callOpenAI(messages, 800);
+  const data = await callOpenAI(messages, 4096);
   const tokensUsed = data.usage?.total_tokens || 0;
   const answer = data.choices?.[0]?.message?.content || '';
 
