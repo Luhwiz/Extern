@@ -95,7 +95,8 @@ async function callOpenAI(messages, maxTokens = 1000) {
       model: 'deepseek-v4-pro',
       messages,
       max_tokens: maxTokens,
-      temperature: 0.7,
+      temperature: 1,          // DeepSeek recommends temp=1 when reasoning is enabled
+      reasoning_effort: 'max', // Full chain-of-thought reasoning
     }),
   });
 
