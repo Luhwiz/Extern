@@ -1,7 +1,7 @@
 {
     "$schema": "https://json.schemastore.org/package.json",
     "name": "externai",
-    "version": "1.1.97",
+    "version": "1.1.90",
     "description": "ExternAI - AI-Powered Development Environment for web, mobile, and game development",
     "main": "src/main/main.js",
     "scripts": {
@@ -15,7 +15,7 @@
         "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:electron\"",
         "dev:renderer": "vite",
         "dev:electron": "NODE_ENV=development electron .",
-        "build": "vite build",
+        "build": "vite build --mode production",
         "build:electron": "npm run prebuild-native && npm run build && electron-builder",
         "pack": "npm run prebuild-native && electron-builder --dir",
         "dist": "npm run prebuild-native && electron-builder",
@@ -71,7 +71,7 @@
         "copyright": "Copyright © 2025 ${author}",
         "publish": {
             "provider": "github",
-            "owner": "Luhwiz",
+            "owner": "Luncedo1234",
             "repo": "Extern",
             "timeout": 600000
         },
@@ -98,15 +98,6 @@
             "category": "public.app-category.developer-tools",
             "artifactName": "${productName}-${arch}.${ext}",
             "icon": "assets/icon.icns",
-            "extraResources": [
-                {
-                    "from": "bundled-node/darwin-${arch}",
-                    "to": "node",
-                    "filter": [
-                        "**/*"
-                    ]
-                }
-            ],
             "target": [
                 {
                     "target": "zip",
@@ -130,15 +121,6 @@
         },
         "win": {
             "icon": "assets/icon.ico",
-            "extraResources": [
-                {
-                    "from": "bundled-node/win32-${arch}",
-                    "to": "node",
-                    "filter": [
-                        "**/*"
-                    ]
-                }
-            ],
             "target": [
                 {
                     "target": "nsis",
@@ -165,8 +147,7 @@
             "createDesktopShortcut": true,
             "createStartMenuShortcut": true,
             "shortcutName": "ExternAI",
-            "artifactName": "${productName}-Setup.${ext}",
-            "include": "assets/installer.nsh"
+            "artifactName": "${productName}-Setup.${ext}"
         }
     }
 }
